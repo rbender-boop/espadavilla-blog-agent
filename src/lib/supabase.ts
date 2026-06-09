@@ -9,7 +9,16 @@ function getClient(): SupabaseClient {
   if (!url || !serviceKey) {
     throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY required');
   }
-  _client = createClient(url, serviceKey, { auth: { persistSession: false } });
+  _client = createClient(url, serviceKey, {
+    auth: { persistSession: false },
+    // Next.js App Router patches global fetch and caches GET responses by
+    // default. supabase-js uses fetch, so reads were served stale — an empty
+    // `status=approved` result got cached on an early cron run and every later
+    // drain reused it, so approved drafts never published. Force no-store so
+    // every query hits PostgREST fresh. (Writes/POSTs were never cached, which
+    // is why inserts worked while reads went stale.)
+    global: { fetch: (input, init) => fetch(input as RequestInfo, { ...init, cache: 'no-store' }) },
+  });
   return _client;
 }
 

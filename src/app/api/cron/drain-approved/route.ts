@@ -17,42 +17,6 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: Request) {
   if (!isAuthorizedCron(req)) return new NextResponse('Unauthorized', { status: 401 });
 
-  // ── TEMP DIAGNOSTIC — remove after debugging the empty-drain issue ──
-  try {
-    const dUrl = process.env.SUPABASE_URL ?? '';
-    const dKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
-    let dRef = '?';
-    let dRole = '?';
-    try {
-      const payload = JSON.parse(Buffer.from((dKey.split('.')[1] ?? ''), 'base64').toString());
-      dRef = payload.ref;
-      dRole = payload.role;
-    } catch {
-      /* ignore decode errors */
-    }
-    const probe = await supabase.from('blog_post_drafts').select('id,status').eq('status', 'approved');
-    const byId = await supabase
-      .from('blog_post_drafts')
-      .select('id,status')
-      .eq('id', '83d97494-b723-46eb-acc3-9240205f763e');
-    console.log(
-      'DRAIN_DIAG ' +
-        JSON.stringify({
-          url_host: dUrl.replace(/^https?:\/\//, '').split('.')[0],
-          key_ref: dRef,
-          key_role: dRole,
-          key_len: dKey.length,
-          approved_count: probe.data?.length ?? null,
-          approved_err: probe.error?.message ?? null,
-          byid: byId.data ?? null,
-          byid_err: byId.error?.message ?? null,
-        }),
-    );
-  } catch (e) {
-    console.error('DRAIN_DIAG_ERR ' + String(e));
-  }
-  // ── END TEMP DIAGNOSTIC ──
-
   const start = Date.now();
   const { data: runRow } = await supabase
     .from('blog_agent_runs')
