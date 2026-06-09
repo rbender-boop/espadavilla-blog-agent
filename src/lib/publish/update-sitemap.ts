@@ -11,8 +11,8 @@
  * matching the file's real maintenance pattern. URLs are extensionless, no
  * trailing slash (matching the live file).
  *
- * Pure function: current XML in → new XML out. Idempotent: if the loc already
- * exists, the input is returned unchanged.
+ * Pure function: current XML in → new XML out. If the loc already exists, only
+ * its <lastmod> is updated (idempotent when lastmod is unchanged).
  */
 
 export function addUrlToSitemap(
@@ -21,9 +21,19 @@ export function addUrlToSitemap(
 ): { xml: string; changed: boolean } {
   const { loc, lastmod, changefreq = 'monthly', priority = '0.6' } = opts;
 
-  // Idempotency: already present (exact loc match).
-  if (new RegExp(`<loc>\\s*${escapeRegex(loc)}\\s*</loc>`).test(currentXml)) {
-    return { xml: currentXml, changed: false };
+  // Already present (exact loc match): keep the entry but UPDATE its <lastmod>
+  // if it changed (content refreshes republish to the same slug — search engines
+  // should see the new modification date). Idempotent when lastmod is unchanged.
+  const locRe = new RegExp(`<loc>\\s*${escapeRegex(loc)}\\s*</loc>`);
+  if (locRe.test(currentXml)) {
+    const blockRe = new RegExp(
+      `(<url>(?:(?!</url>)[\\s\\S])*?<loc>\\s*${escapeRegex(loc)}\\s*</loc>(?:(?!</url>)[\\s\\S])*?)<lastmod>[^<]*</lastmod>`,
+    );
+    if (blockRe.test(currentXml)) {
+      const xml = currentXml.replace(blockRe, `$1<lastmod>${lastmod}</lastmod>`);
+      return { xml, changed: xml !== currentXml };
+    }
+    return { xml: currentXml, changed: false }; // entry exists but has no <lastmod> — leave untouched
   }
 
   const block = [

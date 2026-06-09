@@ -68,7 +68,7 @@ export async function generateRefreshTopics(opts: RefreshOpts = {}): Promise<Ref
   // 1. Load all published drafts with a live /blog/ URL.
   const { data: drafts, error: draftsErr } = await supabase
     .from('blog_post_drafts')
-    .select('id, topic_id, slug, meta_title, live_url, published_at')
+    .select('id, topic_id, slug, meta_title, live_url, published_at, updated_at')
     .eq('status', 'published')
     .not('live_url', 'is', null)
     .like('live_url', '%/blog/%');
@@ -76,13 +76,21 @@ export async function generateRefreshTopics(opts: RefreshOpts = {}): Promise<Ref
 
   const posts = (drafts ?? [])
     .filter((d) => d.slug && d.meta_title && d.live_url && d.published_at)
-    .map((d) => ({
-      draftId:     d.id        as string,
-      slug:        d.slug      as string,
-      title:       d.meta_title as string,
-      publishedAt: d.published_at as string,
-      liveUrl:     d.live_url  as string,
-    }));
+    .map((d) => {
+      // Age anchor for refresh eligibility: a refreshed post inherits the ORIGINAL
+      // published_at (correct for the page's datePublished), so use the LATER of
+      // published_at / updated_at (updated_at = last publish/refresh moment) to
+      // avoid re-flagging a just-refreshed post next run.
+      const pub = d.published_at as string;
+      const upd = (d.updated_at as string | null) ?? pub;
+      return {
+        draftId:     d.id        as string,
+        slug:        d.slug      as string,
+        title:       d.meta_title as string,
+        publishedAt: upd > pub ? upd : pub,
+        liveUrl:     d.live_url  as string,
+      };
+    });
 
   if (posts.length === 0) {
     return { postsChecked: 0, decayDetected: 0, alreadyQueued: 0, inserted: 0, insertedSlugs: [], metricsUpdated: 0, skipped: [] };

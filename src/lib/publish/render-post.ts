@@ -194,8 +194,8 @@ ${indent(bodyHtml, 2)}
 ${faqHtml ? `\n  <section class="post-faq">\n    <h2>Frequently Asked Questions</h2>\n${indent(faqHtml, 4)}\n  </section>\n` : ''}
 ${sources.length ? `\n  <section class="post-sources">\n    <h2>Sources</h2>\n    <ul>\n${sources.map((s) => `      <li>${renderSourceItem(s)}</li>`).join('\n')}\n    </ul>\n  </section>\n` : ''}
   <div class="post-cta">
-    <a href="/contact.html" class="btn btn-gold">Inquire &amp; Book</a>
-    <a href="/rates.html" class="btn btn-gold" style="margin-left:12px;">View Rates</a>
+    <a href="/contact" class="btn btn-gold">Inquire &amp; Book</a>
+    <a href="/rates" class="btn btn-gold" style="margin-left:12px;">View Rates</a>
   </div>
 </main>
 

@@ -38,29 +38,22 @@ export type OverlapResult = {
   guidance: string[];
 };
 
-/** cluster slug (old + new vocab) → money-page hint that acts as the pillar/hub. */
+/** ESPADAVILLA cluster slug (keyword-clusters.ts taxonomy) → MONEY_PAGES hint
+ *  that acts as the pillar/hub page for the cluster. Every value here MUST be a
+ *  real key of MONEY_PAGES (links.ts) or the pillar link is silently dropped. */
 const PILLAR_BY_CLUSTER: Record<string, string> = {
-  packages: 'golf-villa-packages',
-  punta_espada: 'cap-cana-golf-villa',
-  category: 'cap-cana-golf-villa',
-  rental: 'cap-cana-golf-villa',
-  staffed: 'luxury-golf-villa',
-  large_group: 'cap-cana-golf-villa',
-  group_event: 'golf-bachelor-party-villa',
-  comparison: 'caribbean-golf-villa',
-  planning: 'cap-cana-golf-villa',
-  caribbean: 'caribbean-golf-villa',
-  // original seed clusters
-  seasonal: 'cap-cana-golf-villa',
-  luxury_trend: 'luxury-golf-villa',
-  evergreen: 'cap-cana-golf-villa',
-  tourism: 'dominican-republic-golf-villa',
-  tournament: 'caribbean-golf-villa',
+  stay:           'villa',                        // Staying at Villa Espada → /villa
+  group_occasion: 'villa',                        // Group & Occasion → /villa
+  golf:           'golf',                         // Golf at Punta Espada → /golf
+  experience:     'experiences',                  // Cap Cana Experience → /experiences
+  dining:         'amenities',                    // Dining & Chef → /amenities
+  logistics:      'faq',                          // Planning Your Trip → /faq
+  comparison:     'cap-cana-vs-casa-de-campo',    // Comparison → /compare/...
 };
 
 export function pillarForCluster(slug: string | null | undefined): string {
-  if (!slug) return 'cap-cana-golf-villa';
-  return PILLAR_BY_CLUSTER[slug] ?? 'cap-cana-golf-villa';
+  if (!slug) return 'villa';
+  return PILLAR_BY_CLUSTER[slug] ?? 'villa';
 }
 
 /* ----------------------------------------------------------------

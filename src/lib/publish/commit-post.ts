@@ -68,11 +68,35 @@ export async function publishApprovedDraft(draftId: string): Promise<PublishResu
   const slug = draft.slug;
   const url = postUrl(slug);
   const repoPath = postRepoPath(slug);
+  // Phase 4: detect a content refresh up front. A refreshed post must KEEP the
+  // original datePublished (changing it on every refresh looks like date
+  // manipulation to search engines) and carry today as dateModified.
+  let refreshesDraftId: string | null = null;
+  let originalPublishedAt: string | null = null;
+  if (draft.topic_id) {
+    const { data: topicRow } = await supabase
+      .from('blog_topics')
+      .select('refreshes_draft_id')
+      .eq('id', draft.topic_id)
+      .maybeSingle<{ refreshes_draft_id: string | null }>();
+    refreshesDraftId = topicRow?.refreshes_draft_id ?? null;
+    if (refreshesDraftId) {
+      const { data: orig } = await supabase
+        .from('blog_post_drafts')
+        .select('published_at')
+        .eq('id', refreshesDraftId)
+        .maybeSingle<{ published_at: string | null }>();
+      originalPublishedAt = orig?.published_at ?? null;
+    }
+  }
+
   // #2 — derive the published date ONCE and reuse it: if the post was already
   // published, keep its original published_at so a re-render never shifts the
-  // date and the post/index/sitemap can never disagree. UTC throughout.
-  const publishedISO = (draft.published_at ? new Date(draft.published_at) : new Date()).toISOString().slice(0, 10);
-  const modifiedISO = (draft.updated_at ? new Date(draft.updated_at) : new Date()).toISOString().slice(0, 10);
+  // date and the post/index/sitemap can never disagree. For a refresh, inherit
+  // the ORIGINAL post's publish date. UTC throughout.
+  const publishedSource = draft.published_at ?? originalPublishedAt;
+  const publishedISO = (publishedSource ? new Date(publishedSource) : new Date()).toISOString().slice(0, 10);
+  const modifiedISO = new Date().toISOString().slice(0, 10);
 
   // #9 — pull the topic's cluster (articleSection) + keywords for schema enrichment.
   let articleSection: string | undefined;
@@ -97,20 +121,13 @@ export async function publishApprovedDraft(draftId: string): Promise<PublishResu
     // Phase 4: if this is a content-refresh, supersede the original published
     // draft BEFORE committing so the committed_path unique constraint doesn't
     // block the new draft from claiming the same repo path.
-    if (draft.topic_id) {
-      const { data: topicRow } = await supabase
-        .from('blog_topics')
-        .select('refreshes_draft_id')
-        .eq('id', draft.topic_id)
-        .maybeSingle<{ refreshes_draft_id: string | null }>();
-      if (topicRow?.refreshes_draft_id) {
-        const now2 = new Date().toISOString();
-        await supabase
-          .from('blog_post_drafts')
-          .update({ status: 'superseded', committed_path: null, updated_at: now2 })
-          .eq('id', topicRow.refreshes_draft_id)
-          .eq('status', 'published'); // only supersede if the original is still published
-      }
+    if (refreshesDraftId) {
+      const now2 = new Date().toISOString();
+      await supabase
+        .from('blog_post_drafts')
+        .update({ status: 'superseded', committed_path: null, updated_at: now2 })
+        .eq('id', refreshesDraftId)
+        .eq('status', 'published'); // only supersede if the original is still published
     }
 
     // 1. Render the post HTML.
@@ -148,11 +165,11 @@ export async function publishApprovedDraft(draftId: string): Promise<PublishResu
     if (sitemapFile) {
       let xml = sitemapFile.content;
       let smChanged = false;
-      // The post itself.
-      const smPost = addUrlToSitemap(xml, { loc: url, lastmod: publishedISO, changefreq: 'monthly', priority: '0.6' });
+      // The post itself — lastmod is the modification date (updates on refresh).
+      const smPost = addUrlToSitemap(xml, { loc: url, lastmod: modifiedISO, changefreq: 'monthly', priority: '0.6' });
       xml = smPost.xml; smChanged = smChanged || smPost.changed;
-      // #7 — ensure the /blog index page is in the sitemap too (idempotent).
-      const smIndex = addUrlToSitemap(xml, { loc: `${SITE_ORIGIN}/blog`, lastmod: publishedISO, changefreq: 'weekly', priority: '0.7' });
+      // #7 — ensure the /blog index page is in the sitemap too (lastmod tracks every publish).
+      const smIndex = addUrlToSitemap(xml, { loc: `${SITE_ORIGIN}/blog`, lastmod: modifiedISO, changefreq: 'weekly', priority: '0.7' });
       xml = smIndex.xml; smChanged = smChanged || smIndex.changed;
       if (smChanged) files.push({ path: SITEMAP_PATH, content: xml });
     } else {
@@ -163,11 +180,13 @@ export async function publishApprovedDraft(draftId: string): Promise<PublishResu
     const message = `blog: publish "${draft.meta_title}" (${slug})`;
     const { commitUrl } = await commitFiles(files, message);
 
-    // 6. Record success.
+    // 6. Record success. A refresh keeps the ORIGINAL publish timestamp so the
+    // page's datePublished stays stable across the whole refresh chain.
     const now = new Date().toISOString();
+    const publishedAt = draft.published_at ?? originalPublishedAt ?? now;
     await supabase
       .from('blog_post_drafts')
-      .update({ status: 'published', committed_path: repoPath, live_url: url, published_at: now, updated_at: now })
+      .update({ status: 'published', committed_path: repoPath, live_url: url, published_at: publishedAt, updated_at: now })
       .eq('id', draftId);
     if (draft.topic_id) {
       await supabase.from('blog_topics').update({ status: 'published', updated_at: now }).eq('id', draft.topic_id);

@@ -184,7 +184,12 @@ async function draftWithEnforcement(
   const problems = lengthProblems(post);
   if (problems.length > 0) {
     notes.push(`length retry: ${problems.join('; ')}`);
-    const corrective = `${userPrompt}\n\n# CORRECTION REQUIRED\nYour previous draft violated these limits: ${problems.join('; ')}. Return the SAME post, corrected: meta_title <= ${MAX_TITLE} chars, meta_description <= ${MAX_DESC} chars, body_markdown ${MIN_WORDS}-${MAX_WORDS} words. Return ONLY the JSON object.`;
+    const corrective =
+      `${userPrompt}\n\n# CORRECTION REQUIRED\nYour previous draft (included below) violated these limits: ${problems.join('; ')}. ` +
+      `Return the SAME post, corrected: meta_title <= ${MAX_TITLE} chars, meta_description <= ${MAX_DESC} chars, body_markdown ${MIN_WORDS}-${MAX_WORDS} words. ` +
+      `Preserve the structure, facts, and links; only adjust length. Call emit_post exactly once.` +
+      `\n\n# YOUR PREVIOUS DRAFT (correct this — do not start over)\n` +
+      `meta_title: ${post.meta_title}\nmeta_description: ${post.meta_description}\nslug: ${post.slug}\nh1: ${post.h1}\n\n${post.body_markdown}`;
     try {
       const retry = await callDrafter(systemPrompt, corrective);
       const retryProblems = lengthProblems(retry);

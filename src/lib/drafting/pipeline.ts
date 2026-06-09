@@ -204,9 +204,11 @@ async function enforceStep(job: JobRow, deadline: number): Promise<StepResult> {
     notes.push(`length retry: ${problems.join('; ')}`);
     try {
       const correction =
-        `\n\n# CORRECTION REQUIRED\nYour previous draft violated these limits: ${problems.join('; ')}. ` +
+        `\n\n# CORRECTION REQUIRED\nYour previous draft (included below) violated these limits: ${problems.join('; ')}. ` +
         `Return the SAME post, corrected: meta_title <= ${MAX_TITLE} chars, meta_description <= ${MAX_DESC} chars, ` +
-        `body_markdown ${MIN_WORDS}-${MAX_WORDS} words. Call emit_post exactly once.`;
+        `body_markdown ${MIN_WORDS}-${MAX_WORDS} words. Preserve the structure, facts, and links; only adjust length. Call emit_post exactly once.` +
+        `\n\n# YOUR PREVIOUS DRAFT (correct this — do not start over)\n` +
+        `meta_title: ${post.meta_title}\nmeta_description: ${post.meta_description}\nslug: ${post.slug}\nh1: ${post.h1}\n\n${post.body_markdown}`;
       const retry = await generateDraft(job, deadline, correction);
       const retryProblems = lengthProblems(retry);
       if (retryProblems.length === 0 || retryProblems.length < problems.length) {
