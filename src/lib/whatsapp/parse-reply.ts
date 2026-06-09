@@ -33,8 +33,14 @@ export type ParseResult =
 type PendingRow = { approval_id: string; draft_id: string; sent_at: string };
 
 export async function processInboundReply(chatId: string | null, replyText: string): Promise<ParseResult> {
-  const trimmed = (replyText ?? '').trim();
-  if (!trimmed) return { kind: 'ignored', reason: 'empty body' };
+  const raw = (replyText ?? '').trim();
+  if (!raw) return { kind: 'ignored', reason: 'empty body' };
+
+  // Defense-in-depth: the LinkedIn router normally strips the "EV" project tag
+  // before forwarding, but tolerate it here too so a directly-delivered
+  // "EV YES" still parses. Espadavilla only ever owns EV-tagged replies.
+  const trimmed = raw.replace(/^ev\b[\s:,.\-]*/i, '').trim();
+  if (!trimmed) return { kind: 'ignored', reason: 'empty after EV prefix' };
 
   const pending = await findMostRecentPending(chatId);
   if (!pending) return { kind: 'no_match', reason: `no unresolved blog approval row${chatId ? ` for chat_id ${chatId}` : ''}` };
@@ -134,9 +140,9 @@ async function sendEditConfirmation(draftId: string, editedText: string): Promis
     editedText.slice(0, 1500),
     `-------------------`,
     `Reply with:`,
-    `  yes   to publish this version`,
-    `  no    to skip`,
-    `  or paste another edit`,
+    `  EV YES   to publish this version`,
+    `  EV NO    to skip`,
+    `  or paste another edit starting with "EV"`,
   ].join('\n');
   const sendResult = await sendWhatsAppToOwner(message);
   const chatId = sendResult.chat_id ?? sendResult.id ?? null;
