@@ -1,0 +1,24 @@
+.env
+.env.local
+.env*.local
+node_modules/
+.next/
+.vercel/
+dist/
+build/
+out/
+*.log
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+.cache/
+.claude/
+
+.vercel
+.env*
+
+# Google service-account keys (never commit — base64 lives in env only)
+*service-account*.json
+*-search-console-*.json
+gcp-*.json
+*.serviceaccount.json

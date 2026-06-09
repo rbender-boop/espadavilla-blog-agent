@@ -1,0 +1,37 @@
+{
+  "name": "espadavilla-blog-agent",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "draft:local": "tsx src/lib/drafting/run-local.ts",
+    "pipeline:local": "tsx src/lib/drafting/run-pipeline-local.ts",
+    "send:drafts": "tsx src/lib/whatsapp/run-local.ts",
+    "gsc:check": "tsx scripts/gsc-check.ts",
+    "gsc:topics": "tsx scripts/gsc-topics-local.ts",
+    "refresh:check": "tsx scripts/refresh-check.ts",
+    "verify:offline": "tsx scripts/verify-offline.ts",
+    "smoke": "tsx scripts/verify-offline.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.98.0",
+    "@octokit/rest": "^21.0.2",
+    "@supabase/supabase-js": "^2.45.0",
+    "google-auth-library": "^9.15.1",
+    "next": "^14.2.35",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.5",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.0",
+    "dotenv": "^16.4.5",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3"
+  }
+}
