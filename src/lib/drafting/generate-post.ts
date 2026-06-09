@@ -358,7 +358,7 @@ function buildSystemPrompt(memoryBlock: string): string {
 function buildUserPrompt(topic: TopicRow, moneyLinks: Array<{ label: string; url: string }>): string {
   const links = moneyLinks.map((l) => `  - ${l.label}: ${l.url}`).join('\n');
   return [
-    `Write one SEO blog post for golfvilla.com.`,
+    `Write one SEO blog post for espadavilla.com (Villa Espada).`,
     '',
     `# TOPIC`,
     `Working title: ${topic.title}`,

@@ -52,7 +52,7 @@ export function renderPostHtml(input: RenderInput): string {
   const sources = dedupeSources(input.sources ?? []);
   const bodyHtml = markdownToHtml(body);
   const faqHtml = renderFaqHtml(faq);
-  const ogImage = `${SITE_ORIGIN}/images/og-golf-villa.jpg`;
+  const ogImage = `${SITE_ORIGIN}/images/hero-1.jpg`;
   const modifiedISO = input.modifiedISO && input.modifiedISO >= input.publishedISO ? input.modifiedISO : input.publishedISO;
 
   // ── JSON-LD @graph: BlogPosting + BreadcrumbList + (one) FAQPage ──────────
@@ -69,7 +69,7 @@ export function renderPostHtml(input: RenderInput): string {
     dateModified: modifiedISO,
     image: ogImage,
     inLanguage: 'en',
-    author: { '@id': `${SITE_ORIGIN}/#rob-bender` },
+    author: { '@id': `${SITE_ORIGIN}/#person-rb` },
     publisher: { '@id': `${SITE_ORIGIN}/#organization` },
     breadcrumb: { '@id': `${url}#breadcrumb` },
   };
@@ -82,19 +82,17 @@ export function renderPostHtml(input: RenderInput): string {
 
   const personNode = {
     '@type': 'Person',
-    '@id': `${SITE_ORIGIN}/#rob-bender`,
-    name: 'Rob Bender',
+    '@id': `${SITE_ORIGIN}/#person-rb`,
+    name: 'Robert Bender',
     url: SITE_ORIGIN,
-    sameAs: ['https://www.instagram.com/golfvillapuntaespada'],
     worksFor: { '@id': `${SITE_ORIGIN}/#organization` },
   };
   const orgNode = {
     '@type': 'Organization',
     '@id': `${SITE_ORIGIN}/#organization`,
-    name: 'GolfVilla.com',
+    name: 'Villa Espada',
     url: `${SITE_ORIGIN}/`,
     logo: { '@type': 'ImageObject', url: ogImage },
-    sameAs: ['https://www.instagram.com/golfvillapuntaespada'],
   };
   const breadcrumb = {
     '@type': 'BreadcrumbList',
@@ -136,7 +134,7 @@ ${gtmHead()}
   <meta property="og:description" content="${desc}">
   <meta property="og:image" content="${ogImage}">
   <meta property="og:url" content="${url}">
-  <meta property="og:site_name" content="GolfVilla.com">
+  <meta property="og:site_name" content="Villa Espada">
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${title}">
@@ -147,7 +145,7 @@ ${gtmHead()}
 
 ${jsonLd}
 
-  <link rel="stylesheet" href="/css/main.css?v=1">
+  <link rel="stylesheet" href="/css/main.css?v=20260608b">
   <style>
     .post-wrap { max-width: 820px; margin: 0 auto; padding: 130px 6vw 80px; }
     .post-breadcrumb { font-size: 0.78rem; letter-spacing: 0.04em; margin-bottom: 28px; color: var(--muted, #777); }
@@ -190,20 +188,20 @@ ${mobileMenu()}
   </div>
 
   <h1>${h1}</h1>
-  <p class="post-meta">GolfVilla.com · Published ${escapeHtml(formatHumanDate(input.publishedISO))}</p>
+  <p class="post-meta">Villa Espada · Published ${escapeHtml(formatHumanDate(input.publishedISO))}</p>
 ${summary ? `\n  <div class="post-summary"><p>${escapeHtml(summary)}</p></div>\n` : ''}
 ${indent(bodyHtml, 2)}
 ${faqHtml ? `\n  <section class="post-faq">\n    <h2>Frequently Asked Questions</h2>\n${indent(faqHtml, 4)}\n  </section>\n` : ''}
 ${sources.length ? `\n  <section class="post-sources">\n    <h2>Sources</h2>\n    <ul>\n${sources.map((s) => `      <li>${renderSourceItem(s)}</li>`).join('\n')}\n    </ul>\n  </section>\n` : ''}
   <div class="post-cta">
-    <a href="https://www.espadavilla.com" class="btn btn-gold">Book Villa Espada</a>
-    <a href="/cap-cana-golf-villa" class="btn btn-navy" style="margin-left:12px;">Explore the Cap Cana Golf Villa</a>
+    <a href="/contact.html" class="btn btn-gold">Inquire &amp; Book</a>
+    <a href="/rates.html" class="btn btn-gold" style="margin-left:12px;">View Rates</a>
   </div>
 </main>
 
 ${siteFooter()}
 
-<script src="/js/main.js?v=1"></script>
+<script src="/js/main.js?v=20260608b"></script>
 </body>
 </html>
 `;

@@ -140,7 +140,7 @@ function formatDraftMessage(draft: DraftRow): string {
   const footer = [
     `-------------------`,
     `Reply with:`,
-    `  yes   to publish to golfvilla.com`,
+    `  yes   to publish to espadavilla.com`,
     `  no    to skip`,
     `  or paste an edited version`,
   ].join('\n');

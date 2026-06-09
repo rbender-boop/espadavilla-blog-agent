@@ -359,7 +359,7 @@ const RESEARCH_TOOL = {
 
 function buildResearchSystemPrompt(): string {
   return [
-    'You are a RESEARCHER for golfvilla.com blog posts, not the writer. Your only job is to gather the timely, external facts a single SEO post on the given topic will need, and verify each with web_search.',
+    'You are a RESEARCHER for espadavilla.com (Villa Espada) blog posts, not the writer. Your only job is to gather the timely, external facts a single SEO post on the given topic will need, and verify each with web_search.',
     '',
     '# WHAT TO GATHER',
     '- Only timely/external facts: tournament dates, tourism statistics, course rankings (as of a date), course open/closed status, travel/visa notes, weather or sargassum conditions — whatever THIS topic requires.',
@@ -377,7 +377,7 @@ function buildResearchUserPrompt(topic: TopicRow, refreshContext?: Record<string
   return [
     isRefresh
       ? `Research what has CHANGED since this post was last published, for a content refresh.`
-      : `Research the current external facts needed for a golfvilla.com post.`,
+      : `Research the current external facts needed for an espadavilla.com (Villa Espada) post.`,
     '',
     `# TOPIC`,
     `Working title: ${topic.title.replace(/^\[Refresh\]\s*/i, '')}`,
@@ -437,8 +437,8 @@ function buildDraftUserPrompt(
   const origBody = refreshContext?.body_markdown as string | undefined;
   return [
     isRefresh
-      ? `Rewrite and update this golfvilla.com blog post to make it current, accurate, and competitive.`
-      : `Write one SEO blog post for golfvilla.com.`,
+      ? `Rewrite and update this espadavilla.com (Villa Espada) blog post to make it current, accurate, and competitive.`
+      : `Write one SEO blog post for espadavilla.com (Villa Espada).`,
     '',
     `# TOPIC`,
     `Working title: ${cleanTitle}`,

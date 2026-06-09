@@ -59,7 +59,7 @@ async function collectDiffs(): Promise<DiffRow[]> {
   return diffs.slice(0, CORPUS_CAP);
 }
 
-const ANALYSIS_SYSTEM = `You analyse a corpus of AI-written golf-travel blog drafts for golfvilla.com and the human edits Rob Bender made to them.
+const ANALYSIS_SYSTEM = `You analyse a corpus of AI-written Cap Cana / Villa Espada blog drafts for espadavilla.com and the human edits Rob Bender made to them.
 
 Identify CONCRETE, repeating, actionable patterns in how Rob edits the drafts. Good patterns:
   - "Rob cuts the opening hook to one sentence"

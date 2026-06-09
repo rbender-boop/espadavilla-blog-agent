@@ -2,19 +2,18 @@
  * update-index.ts — maintain the /blog/ listing page.
  *
  * Pure function: existing blog/index.html (or null if it doesn't exist yet) +
- * the new post → updated index HTML. The card list lives between sentinel
- * comments so inserts are surgical and idempotent (a slug already present is a
- * no-op). Newest card is inserted first. If the file doesn't exist, a full
- * listing page is generated from the SHARED golfvilla.com chrome
- * (./site-chrome — audit fix #3), so the index nav/footer always match the
- * posts and the live site (including the /blog nav link).
+ * the new post → updated index HTML.
+ *
+ * IMPORTANT: espadavilla.com ships a HAND-BUILT blog/index.html (Villa Espada
+ * chrome + a <ul> of existing post links). We must NEVER regenerate/replace it —
+ * doing so would wipe ~dozens of live posts and the real chrome. So the normal
+ * path is a SURGICAL, idempotent insert of one <li> at the top of the existing
+ * list (newest first). A full page is generated ONLY if the index file is
+ * genuinely absent (it isn't, in production).
  */
 
 import { SITE_ORIGIN } from '../links';
-import { gtmHead, gtmBodyNoscript, networkBar, siteNav, mobileMenu, siteFooter } from './site-chrome';
-
-const CARDS_START = '<!-- BLOG-CARDS:START -->';
-const CARDS_END = '<!-- BLOG-CARDS:END -->';
+import { gtmHead, gtmBodyNoscript, siteNav, mobileMenu, siteFooter } from './site-chrome';
 
 export type IndexCard = {
   slug: string;
@@ -23,39 +22,54 @@ export type IndexCard = {
   publishedISO: string;
 };
 
-export function upsertIndexCard(currentHtml: string | null, card: IndexCard): { html: string; changed: boolean } {
-  const html = currentHtml && currentHtml.includes(CARDS_START) ? currentHtml : freshIndexPage();
+// Matches the opening <ul ...> of the post list IF it is immediately followed by
+// a /blog/ <li>. Capturing groups let us splice a new <li> in as the first item.
+const LIST_HEAD_RE = /(<ul\b[^>]*>)(\s*<li>\s*<a\s+href="\/blog\/)/i;
 
-  // Idempotency: card for this slug already present.
-  if (new RegExp(`href="/blog/${escapeRegex(card.slug)}"`).test(html)) {
-    return { html, changed: false };
+export function upsertIndexCard(currentHtml: string | null, card: IndexCard): { html: string; changed: boolean } {
+  // No existing index at all → generate a fresh Villa Espada listing page.
+  if (!currentHtml || !/href="\/blog\//.test(currentHtml)) {
+    return { html: freshIndexPage(card), changed: true };
   }
 
-  const cardHtml = renderCard(card);
-  const startIdx = html.indexOf(CARDS_START) + CARDS_START.length;
-  const next = html.slice(0, startIdx) + '\n' + cardHtml + html.slice(startIdx);
-  return { html: next, changed: true };
+  // Idempotency: this post is already listed (with or without .html).
+  const slug = escapeRegex(card.slug);
+  if (new RegExp(`href="/blog/${slug}(?:\\.html)?"`).test(currentHtml)) {
+    return { html: currentHtml, changed: false };
+  }
+
+  const li = renderListItem(card);
+
+  // Preferred: insert as the first <li> of the existing post list.
+  if (LIST_HEAD_RE.test(currentHtml)) {
+    const html = currentHtml.replace(LIST_HEAD_RE, (_m, ulOpen: string, liStart: string) => `${ulOpen}\n${li}${liStart}`);
+    return { html, changed: true };
+  }
+
+  // Fallback: insert right before the first existing /blog/ <li> anywhere.
+  const firstLi = currentHtml.search(/<li>\s*<a\s+href="\/blog\//i);
+  if (firstLi !== -1) {
+    const html = currentHtml.slice(0, firstLi) + li + '\n' + currentHtml.slice(firstLi);
+    return { html, changed: true };
+  }
+
+  // Could not locate the list — do NOT clobber the page. Leave it unchanged.
+  return { html: currentHtml, changed: false };
 }
 
-function renderCard(card: IndexCard): string {
-  return [
-    '      <a class="blog-card" href="/blog/' + escapeAttr(card.slug) + '">',
-    `        <span class="blog-card-date">${escapeHtml(formatHumanDate(card.publishedISO))}</span>`,
-    `        <h2 class="blog-card-title">${escapeHtml(card.title)}</h2>`,
-    `        <p class="blog-card-desc">${escapeHtml(card.description)}</p>`,
-    '        <span class="blog-card-cta">Read more →</span>',
-    '      </a>',
-  ].join('\n');
+/** One list row in the live index's format: <li><a href="/blog/slug.html">Title</a></li> */
+function renderListItem(card: IndexCard): string {
+  return `<li><a href="/blog/${escapeAttr(card.slug)}.html">${escapeHtml(card.title)}</a></li>`;
 }
 
-function freshIndexPage(): string {
+/** Full Villa Espada listing page — only used if blog/index.html is absent. */
+function freshIndexPage(card: IndexCard): string {
   const url = `${SITE_ORIGIN}/blog`;
-  const title = 'Golf Villa Blog — Cap Cana &amp; Caribbean Golf Travel | GolfVilla.com';
-  const desc = 'Golf-travel intelligence for groups planning luxury private golf trips to Cap Cana, Punta Espada, and the Caribbean.';
+  const title = 'Blog &amp; Travel Guides | Villa Espada Cap Cana';
+  const desc = 'Expert travel guides to Cap Cana, Punta Espada golf, Dominican Republic luxury villas, beaches, dining and more.';
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
-${gtmHead()}
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title}</title>
@@ -66,43 +80,30 @@ ${gtmHead()}
   <meta property="og:title" content="${title}">
   <meta property="og:description" content="${desc}">
   <meta property="og:url" content="${url}">
-  <meta property="og:site_name" content="GolfVilla.com">
-  <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  <link rel="stylesheet" href="/css/main.css?v=1">
-  <style>
-    .blog-wrap { max-width: 920px; margin: 0 auto; padding: 130px 6vw 80px; }
-    .blog-wrap h1 { font-size: clamp(2rem, 4vw, 3rem); color: var(--navy); margin: 0 0 10px; }
-    .blog-lede { font-size: 1.1rem; color: var(--muted, #555); margin-bottom: 40px; line-height: 1.7; }
-    .blog-list { display: grid; gap: 22px; }
-    .blog-card { display: block; padding: 24px 26px; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; text-decoration: none; color: inherit; transition: border-color .15s, box-shadow .15s; }
-    .blog-card:hover { border-color: var(--gold, #C9A84C); box-shadow: 0 6px 22px rgba(0,0,0,0.06); }
-    .blog-card-date { font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted, #999); }
-    .blog-card-title { font-size: 1.3rem; margin: 6px 0 8px; color: var(--navy); line-height: 1.25; }
-    .blog-card-desc { line-height: 1.65; margin: 0 0 12px; color: var(--muted, #555); }
-    .blog-card-cta { font-size: 0.9rem; color: var(--gold, #C9A84C); font-weight: 600; }
-  </style>
+  <meta property="og:site_name" content="Villa Espada">
+  <meta property="og:image" content="${SITE_ORIGIN}/images/hero-1.jpg">
+  <link rel="stylesheet" href="/css/main.css?v=20260608b">
+${gtmHead()}
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
 </head>
 <body>
 ${gtmBodyNoscript()}
-
-${networkBar()}
-
 ${siteNav()}
-
 ${mobileMenu()}
-
-<main class="blog-wrap">
-  <h1>Golf Villa Blog</h1>
-  <p class="blog-lede">Golf-travel intelligence for groups planning luxury private golf trips — Cap Cana, Punta Espada, and the wider Caribbean.</p>
-  <div class="blog-list">
-      ${CARDS_START}
-      ${CARDS_END}
+<div class="page-hero" style="height:35vh;min-height:280px;">
+  <div class="page-hero-overlay"></div>
+  <div class="page-hero-content"><span class="overline">Expert Travel Guides</span><h1>Blog &amp; Guides</h1></div>
+</div>
+<div class="breadcrumb"><a href="/index.html">Home</a><span>›</span>Blog</div>
+<section style="background:white;padding:70px 0;">
+  <div class="container">
+    <div class="section-header"><span class="overline">Cap Cana &amp; Dominican Republic</span><h2>Expert Travel Guides</h2><div class="gold-divider"></div></div>
+    <ul style="display:flex;flex-direction:column;gap:16px;margin-top:32px;">
+${renderListItem(card)}</ul>
   </div>
-</main>
-
+</section>
 ${siteFooter()}
-
-<script src="/js/main.js?v=1"></script>
+<script src="/js/main.js?v=20260608b"></script>
 </body>
 </html>
 `;
@@ -117,8 +118,4 @@ function escapeAttr(s: string): string {
 }
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-function formatHumanDate(iso: string): string {
-  const d = new Date(`${iso}T12:00:00Z`);
-  return new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }).format(d);
 }

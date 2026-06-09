@@ -54,7 +54,7 @@ const SAMPLE = {
 // 1. Render
 const html = renderPostHtml(SAMPLE);
 check('render: doctype + lang', html.startsWith('<!DOCTYPE html>') && html.includes('<html lang="en">'));
-check('render: GTM container present', html.includes('GTM-N59QFL4G'));
+check('render: GTM container present', html.includes('GTM-PMPSNQZT'));
 check('render: canonical extensionless no-trailing-slash', html.includes(`<link rel="canonical" href="${postUrl(SAMPLE.slug)}">`) && !html.includes(`${postUrl(SAMPLE.slug)}/`));
 check('render: BlogPosting JSON-LD', /"@type":\s*"BlogPosting"/.test(html));
 check('render: exactly one FAQPage', (html.match(/"@type":\s*"FAQPage"/g) ?? []).length === 1, `got ${(html.match(/"@type":\s*"FAQPage"/g) ?? []).length}`);
@@ -80,14 +80,18 @@ check('sitemap: closes with </urlset>', ins.xml.trimEnd().endsWith('</urlset>'))
 const ins2 = addUrlToSitemap(ins.xml, { loc: postUrl(SAMPLE.slug), lastmod: SAMPLE.publishedISO });
 check('sitemap: idempotent on re-run', !ins2.changed && ins2.xml === ins.xml);
 
-// 3. Blog index create + insert + idempotency
+// 3. Blog index create + insert + idempotency + no-clobber of the hand-built index
 const idx1 = upsertIndexCard(null, { slug: SAMPLE.slug, title: SAMPLE.meta_title, description: SAMPLE.meta_description, publishedISO: SAMPLE.publishedISO });
-check('index: created fresh page with card', idx1.changed && idx1.html.includes(`href="/blog/${SAMPLE.slug}"`));
-check('index: has sentinel region', idx1.html.includes('BLOG-CARDS:START') && idx1.html.includes('BLOG-CARDS:END'));
+check('index: fresh page lists the card', idx1.changed && idx1.html.includes(`href="/blog/${SAMPLE.slug}.html"`));
+check('index: fresh page uses Villa Espada chrome', idx1.html.includes('Villa Espada') && idx1.html.includes('site-footer') && !/golfvilla/i.test(idx1.html));
 const idx2 = upsertIndexCard(idx1.html, { slug: SAMPLE.slug, title: SAMPLE.meta_title, description: SAMPLE.meta_description, publishedISO: SAMPLE.publishedISO });
 check('index: idempotent for same slug', !idx2.changed);
 const idx3 = upsertIndexCard(idx1.html, { slug: 'second-post', title: 'Second Post', description: 'Another one', publishedISO: '2026-06-14' });
-check('index: inserts a second distinct card', idx3.changed && idx3.html.includes('href="/blog/second-post"') && idx3.html.includes(`href="/blog/${SAMPLE.slug}"`));
+check('index: inserts a second distinct card', idx3.changed && idx3.html.includes('href="/blog/second-post.html"') && idx3.html.includes(`href="/blog/${SAMPLE.slug}.html"`));
+// Real espadavilla index is HAND-BUILT (no sentinels): insert must PRESERVE existing posts + chrome.
+const handBuilt = '<ul style="display:flex;gap:16px;"><li><a href="/blog/existing-post.html">Existing Post</a></li></ul><footer class="site-footer">Villa Espada</footer>';
+const idx4 = upsertIndexCard(handBuilt, { slug: 'brand-new', title: 'Brand New', description: 'x', publishedISO: '2026-06-14' });
+check('index: preserves hand-built index on insert', idx4.changed && idx4.html.includes('href="/blog/existing-post.html"') && idx4.html.includes('href="/blog/brand-new.html"') && idx4.html.includes('site-footer'));
 
 // 4. Villa-fact guard
 check('guard: clean body passes', !checkVillaFacts(SAMPLE.body_markdown).flagged);

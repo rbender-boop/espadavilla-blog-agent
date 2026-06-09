@@ -216,7 +216,7 @@ Reminder: all Vercel secrets are write-only (`vercel env pull` returns them empt
 - GSC property: `sc-domain:espadavilla.com`
 - GSC SA: `search-console-agent@golfvilla-search-console.iam.gserviceaccount.com` (reused, domain-wide delegation)
 - Supabase: NEW project — project_id `qqjrujrrqxtfsuikakuu`, URL https://qqjrujrrqxtfsuikakuu.supabase.co (name "esapadavillablogagent", us-east-1). Migrations 0001/0003/0004/0005/0007 APPLIED 2026-06-09.
-- Vercel: NEW project — record project_id + domain here once created: __________
+- Vercel: project_id `prj_LlQslaqdJQOgCzYfryGbG8XNkXT1`, team `team_5kyP9NiGKlZKAM1kiPmrCpu1` (robert-benders-projects), name "espadavilla-blog-agent", domain espadavilla-blog-agent.vercel.app. DEPLOYED to production 2026-06-09; all env vars set; health 200 with all checks true; Thursday crons live.
 
 ## 11. Resolved at build time (2026-06-09 — read from the live site + GSC, do not re-derive)
 **URL convention (from espadavilla-com/vercel.json):** `cleanUrls:true`, `trailingSlash:false`,

@@ -5,7 +5,7 @@
 import type { ReactNode } from 'react';
 
 export const metadata = {
-  title: 'GolfVilla Blog Agent',
+  title: 'Villa Espada Blog Agent',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

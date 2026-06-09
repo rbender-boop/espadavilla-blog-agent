@@ -15,7 +15,7 @@ function present(name: string): boolean {
 export async function GET() {
   return NextResponse.json({
     ok: true,
-    service: 'golfvilla-blog-agent',
+    service: 'espadavilla-blog-agent',
     time: new Date().toISOString(),
     env: {
       ANTHROPIC_API_KEY: present('ANTHROPIC_API_KEY'),
@@ -26,8 +26,8 @@ export async function GET() {
       UNIPILE_WHATSAPP_ACCOUNT_ID: present('UNIPILE_WHATSAPP_ACCOUNT_ID'),
       UNIPILE_WHATSAPP_OWNER_NUMBER: present('UNIPILE_WHATSAPP_OWNER_NUMBER'),
       INBOUND_RESOLVE_SECRET: present('INBOUND_RESOLVE_SECRET'),
-      GITHUB_TOKEN_GOLFVILLA: present('GITHUB_TOKEN_GOLFVILLA'),
-      GOLFVILLA_REPO: present('GOLFVILLA_REPO'),
+      GITHUB_TOKEN_ESPADAVILLA: present('GITHUB_TOKEN_ESPADAVILLA'),
+      ESPADAVILLA_REPO: present('ESPADAVILLA_REPO'),
       CRON_SECRET: present('CRON_SECRET'),
     },
   });
