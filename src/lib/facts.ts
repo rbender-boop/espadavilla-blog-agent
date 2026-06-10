@@ -10,8 +10,9 @@
  * When that page changes, update this file to match and nothing else.
  * Reconciled 2026-06-09 (per Rob, matched to espadavilla.com/property-facts):
  *   bathrooms 9.5; peak $4,000; holiday $7,500–$8,500; coordinates + staff/included
- *   updated; pools = infinity + rooftop; WhatsApp +1 (248) 254-3406 (re-verified
- *   against the live property-facts page 2026-06-09).
+ *   updated; pools = infinity + rooftop; WhatsApp +1 (734) 755-6357 (canonical
+ *   per Rob / CANONICAL-FACTS.md; the live site briefly showed a 248 number and
+ *   was fixed across espadavilla-com on 2026-06-09, commit 697924a).
  */
 
 export const CANONICAL_FACTS = {
@@ -39,7 +40,7 @@ export const CANONICAL_FACTS = {
     beaches: 'Private access to Eden Roc Beach Club and Juanillo Beach (~8 min by golf cart).',
     airport: '~20-minute private transfer from Punta Cana International Airport (PUJ).',
     policy: 'Check-in 3:00 PM / check-out 11:00 AM. No pets. Payment by credit card or USD wire.',
-    booking: 'Direct only at espadavilla.com (no third-party commission). Contact rob@espadavilla.com, WhatsApp +1 (248) 254-3406.',
+    booking: 'Direct only at espadavilla.com (no third-party commission). Contact rob@espadavilla.com, WhatsApp +1 (734) 755-6357.',
   },
   rates: {
     low: { usd: 2500, label: 'low', minNights: 3 },
