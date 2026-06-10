@@ -19,12 +19,15 @@
 import { supabase } from '../src/lib/supabase';
 import { postUrl, postRepoPath, SITE_ORIGIN } from '../src/lib/links';
 import { renderPostHtml } from '../src/lib/publish/render-post';
+import { pickPostImage } from '../src/lib/publish/blog-images';
 import { upsertIndexCard } from '../src/lib/publish/update-index';
+import { upsertLlmsEntry } from '../src/lib/publish/update-llms';
 import { addUrlToSitemap } from '../src/lib/publish/update-sitemap';
 import { getFile, commitFiles, type RepoFile } from '../src/lib/publish/github';
 
 const SITEMAP_PATH = 'sitemap.xml';
 const INDEX_PATH = 'blog/index.html';
+const LLMS_PATH = 'llms.txt';
 
 /** Escape a string for safe use inside a RegExp (standard MDN escape). */
 function escapeRegExp(s: string): string {
@@ -40,7 +43,7 @@ async function main() {
 
   const { data: draft, error } = await supabase
     .from('blog_post_drafts')
-    .select('id, topic_id, slug, meta_title, meta_description, h1, body_markdown, edited_content, faq, word_count, published_at, updated_at, live_url')
+    .select('id, topic_id, slug, meta_title, meta_description, h1, summary, body_markdown, edited_content, faq, sources, word_count, published_at, updated_at, live_url')
     .eq('slug', slug)
     .single();
 
@@ -49,8 +52,9 @@ async function main() {
 
   const url = postUrl(slug);
   const repoPath = postRepoPath(slug);
+  // Preserve the original publish date; this re-render IS a modification → today.
   const publishedISO = (draft.published_at ? new Date(draft.published_at) : new Date()).toISOString().slice(0, 10);
-  const modifiedISO = (draft.updated_at ? new Date(draft.updated_at) : new Date()).toISOString().slice(0, 10);
+  const modifiedISO = new Date().toISOString().slice(0, 10);
 
   let articleSection: string | undefined;
   let keywords: string[] | undefined;
@@ -68,22 +72,30 @@ async function main() {
   }
 
   const bodyMarkdown = (draft.edited_content?.trim() ? draft.edited_content : draft.body_markdown) ?? '';
+  const heroImage = pickPostImage(slug, articleSection ?? null);
 
   const postHtml = renderPostHtml({
     slug,
     meta_title: draft.meta_title,
     meta_description: draft.meta_description,
     h1: draft.h1,
+    summary: draft.summary ?? undefined,
     body_markdown: bodyMarkdown,
     faq: draft.faq ?? [],
+    sources: draft.sources ?? undefined,
     publishedISO,
     modifiedISO,
     wordCount: draft.word_count ?? undefined,
     articleSection,
     keywords,
+    image: heroImage,
   });
 
-  const [indexFile, sitemapFile] = await Promise.all([getFile(INDEX_PATH), getFile(SITEMAP_PATH)]);
+  const [indexFile, sitemapFile, llmsFile] = await Promise.all([
+    getFile(INDEX_PATH),
+    getFile(SITEMAP_PATH),
+    getFile(LLMS_PATH),
+  ]);
   const files: RepoFile[] = [{ path: repoPath, content: postHtml }];
 
   // Re-render the index card: remove an existing (possibly stale-dated) card for
@@ -107,15 +119,27 @@ async function main() {
   if (sitemapFile) {
     let xml = sitemapFile.content;
     let changed = false;
-    const a = addUrlToSitemap(xml, { loc: url, lastmod: publishedISO, changefreq: 'monthly', priority: '0.6' });
+    const a = addUrlToSitemap(xml, { loc: url, lastmod: modifiedISO, changefreq: 'monthly', priority: '0.6' });
     xml = a.xml; changed = changed || a.changed;
-    const b = addUrlToSitemap(xml, { loc: `${SITE_ORIGIN}/blog`, lastmod: publishedISO, changefreq: 'weekly', priority: '0.7' });
+    const b = addUrlToSitemap(xml, { loc: `${SITE_ORIGIN}/blog`, lastmod: modifiedISO, changefreq: 'weekly', priority: '0.7' });
     xml = b.xml; changed = changed || b.changed;
     if (changed) files.push({ path: SITEMAP_PATH, content: xml });
   }
 
-  const { commitUrl } = await commitFiles(files, `blog: re-render "${draft.meta_title}" (${slug}) — audit fixes`);
+  // llms.txt — add/update this post's entry in ## Latest Guides.
+  if (llmsFile) {
+    const r = upsertLlmsEntry(llmsFile.content, {
+      url,
+      title: draft.meta_title,
+      description: draft.meta_description,
+      dateISO: modifiedISO,
+    });
+    if (r.changed) files.push({ path: LLMS_PATH, content: r.txt });
+  }
+
+  const { commitUrl } = await commitFiles(files, `blog: re-render "${draft.meta_title}" (${slug}) — cluster image + llms.txt`);
   console.log(`Re-rendered ${files.length} file(s) for ${slug}`);
+  console.log(`Hero image: ${heroImage.url}`);
   console.log(`Commit: ${commitUrl}`);
   console.log(`Live: ${url}`);
 }
