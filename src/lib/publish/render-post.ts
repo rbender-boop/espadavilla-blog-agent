@@ -37,6 +37,7 @@ export type RenderInput = {
   wordCount?: number | undefined;          // audit fix #9
   articleSection?: string | undefined;     // topic cluster — audit fix #9
   keywords?: string[] | undefined;         // primary + secondary — audit fix #9
+  image?: { url: string; width: number; height: number; alt: string } | undefined; // per-post hero (cluster-mapped)
 };
 
 export function renderPostHtml(input: RenderInput): string {
@@ -52,7 +53,10 @@ export function renderPostHtml(input: RenderInput): string {
   const sources = dedupeSources(input.sources ?? []);
   const bodyHtml = markdownToHtml(body);
   const faqHtml = renderFaqHtml(faq);
-  const ogImage = `${SITE_ORIGIN}/images/hero-1.jpg`;
+  // Per-post hero image (cluster-mapped). Falls back to the legacy single hero
+  // only when no image is supplied, so older callers keep working.
+  const heroImage = input.image ?? { url: `${SITE_ORIGIN}/images/hero-1.jpg`, width: 0, height: 0, alt: input.meta_title };
+  const ogImage = heroImage.url;
   const modifiedISO = input.modifiedISO && input.modifiedISO >= input.publishedISO ? input.modifiedISO : input.publishedISO;
 
   // ── JSON-LD @graph: BlogPosting + BreadcrumbList + (one) FAQPage ──────────
@@ -67,7 +71,9 @@ export function renderPostHtml(input: RenderInput): string {
     description: input.meta_description,
     datePublished: input.publishedISO,
     dateModified: modifiedISO,
-    image: ogImage,
+    image: heroImage.width > 0
+      ? { '@type': 'ImageObject', url: heroImage.url, width: heroImage.width, height: heroImage.height }
+      : heroImage.url,
     inLanguage: 'en',
     author: { '@id': `${SITE_ORIGIN}/#person-rb` },
     publisher: { '@id': `${SITE_ORIGIN}/#organization` },
@@ -133,12 +139,13 @@ ${gtmHead()}
   <meta property="og:title" content="${title}">
   <meta property="og:description" content="${desc}">
   <meta property="og:image" content="${ogImage}">
-  <meta property="og:url" content="${url}">
+${heroImage.width > 0 ? `  <meta property="og:image:width" content="${heroImage.width}">\n  <meta property="og:image:height" content="${heroImage.height}">\n  <meta property="og:image:alt" content="${escapeHtml(heroImage.alt)}">\n` : ''}  <meta property="og:url" content="${url}">
   <meta property="og:site_name" content="Villa Espada">
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${title}">
   <meta name="twitter:description" content="${desc}">
+  <meta name="twitter:image" content="${ogImage}">
   <meta name="theme-color" content="#C9A84C">
 
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -148,6 +155,7 @@ ${jsonLd}
   <link rel="stylesheet" href="/css/main.css?v=20260608b">
   <style>
     .post-wrap { max-width: 820px; margin: 0 auto; padding: 130px 6vw 80px; }
+    .post-hero { width: 100%; height: auto; border-radius: 8px; margin: 0 0 36px; display: block; }
     .post-breadcrumb { font-size: 0.78rem; letter-spacing: 0.04em; margin-bottom: 28px; color: var(--muted, #777); }
     .post-breadcrumb a { color: var(--muted, #777); text-decoration: none; }
     .post-breadcrumb a:hover { color: var(--gold, #C9A84C); }
@@ -189,6 +197,7 @@ ${mobileMenu()}
 
   <h1>${h1}</h1>
   <p class="post-meta">Villa Espada · Published ${escapeHtml(formatHumanDate(input.publishedISO))}</p>
+${input.image ? `\n  <img class="post-hero" src="${heroImage.url}" alt="${escapeHtml(heroImage.alt)}"${heroImage.width > 0 ? ` width="${heroImage.width}" height="${heroImage.height}"` : ''} loading="eager">\n` : ''}
 ${summary ? `\n  <div class="post-summary"><p>${escapeHtml(summary)}</p></div>\n` : ''}
 ${indent(bodyHtml, 2)}
 ${faqHtml ? `\n  <section class="post-faq">\n    <h2>Frequently Asked Questions</h2>\n${indent(faqHtml, 4)}\n  </section>\n` : ''}

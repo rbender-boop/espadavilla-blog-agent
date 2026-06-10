@@ -14,6 +14,7 @@ import { supabase } from '../supabase';
 import { sendWhatsAppToOwner } from '../unipile';
 import { postUrl, postRepoPath, SITE_ORIGIN } from '../links';
 import { renderPostHtml } from './render-post';
+import { pickPostImage } from './blog-images';
 import { addUrlToSitemap } from './update-sitemap';
 import { upsertIndexCard } from './update-index';
 import { upsertLlmsEntry } from './update-llms';
@@ -133,7 +134,8 @@ export async function publishApprovedDraft(draftId: string): Promise<PublishResu
         .eq('status', 'published'); // only supersede if the original is still published
     }
 
-    // 1. Render the post HTML.
+    // 1. Render the post HTML. Cluster-mapped hero image (stable per slug).
+    const heroImage = pickPostImage(slug, articleSection ?? null);
     const postHtml = renderPostHtml({
       slug,
       meta_title: draft.meta_title,
@@ -148,6 +150,7 @@ export async function publishApprovedDraft(draftId: string): Promise<PublishResu
       wordCount: draft.word_count ?? undefined,
       articleSection,
       keywords,
+      image: heroImage,
     });
 
     // 2. Read current index + sitemap + llms.txt (+ IndexNow key file) from the

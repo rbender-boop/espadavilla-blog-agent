@@ -13,6 +13,7 @@ import { renderPostHtml } from '../src/lib/publish/render-post';
 import { addUrlToSitemap } from '../src/lib/publish/update-sitemap';
 import { upsertIndexCard } from '../src/lib/publish/update-index';
 import { upsertLlmsEntry } from '../src/lib/publish/update-llms';
+import { pickPostImage } from '../src/lib/publish/blog-images';
 import { checkVillaFacts } from '../src/lib/facts';
 import { checkNegativeList } from '../src/lib/keywords';
 import { postUrl } from '../src/lib/links';
@@ -224,6 +225,23 @@ const l4 = upsertLlmsEntry(l3.txt, { url: postUrl('second-post'), title: 'Second
 check('llms: second post inserted at top of Latest Guides', l4.changed && l4.txt.indexOf('- [Second Post]') < l4.txt.indexOf('- [Tennis and Padel Cap Cana]'));
 const l5 = upsertLlmsEntry(LLMS_FIXTURE, { url: 'https://www.espadavilla.com/blog/cap-cana-guide', title: 'Cap Cana Travel Guide 2026', description: 'Refreshed guide.', dateISO: '2026-06-09' });
 check('llms: URL already in Pillar Guides updated in place, never duplicated', l5.changed && (l5.txt.match(/cap-cana-guide\)/g) ?? []).length === 1 && !l5.txt.includes('## Latest Guides'));
+
+// 9. Per-post image selection (cluster-mapped, deterministic by slug)
+const imgStay = pickPostImage('staying-at-villa-espada-day-on-property', 'stay');
+const imgExp = pickPostImage('tennis-and-padel-cap-cana', 'experience');
+check('image: stay cluster resolves a villa image', imgStay.url.includes('/images/villa-espada-') && imgStay.width >= 1200);
+check('image: experience cluster resolves an experience image', /eden_roc|juanillo|scapepark|fishing|establos|rafanadal|el-dorado/i.test(imgExp.url) && imgExp.height > 0);
+check('image: deterministic — same slug+cluster gives same url', pickPostImage('tennis-and-padel-cap-cana', 'experience').url === imgExp.url);
+check('image: different slugs can differ within a pool', pickPostImage('a-different-experience-post-xyz', 'experience').url !== '' );
+check('image: unknown cluster falls back to default villa image', pickPostImage('whatever', 'nonexistent').url.includes('villa-espada-aerial-fairway-5'));
+check('image: null cluster falls back', pickPostImage('whatever', null).width === 2000);
+check('image: alt text is non-empty', imgStay.alt.length > 0 && imgExp.alt.length > 0);
+// Render path actually emits the image (ImageObject + visible hero + og dims)
+const htmlImg = renderPostHtml({ ...SAMPLE, articleSection: 'stay', image: imgStay });
+check('image: render emits ImageObject with dimensions', htmlImg.includes('"@type":"ImageObject"') && htmlImg.includes(`"width":${imgStay.width}`));
+check('image: render emits visible hero img tag', htmlImg.includes('class="post-hero"') && htmlImg.includes(`width="${imgStay.width}"`));
+check('image: render emits og:image dimensions', htmlImg.includes(`<meta property="og:image:width" content="${imgStay.width}">`));
+check('image: render without image keeps legacy hero-1 fallback', !renderPostHtml(SAMPLE).includes('class="post-hero"') && renderPostHtml(SAMPLE).includes('/images/hero-1.jpg'));
 
 console.log(`\n${failures === 0 ? 'ALL CHECKS PASSED' : `${failures} CHECK(S) FAILED`}`);
 process.exit(failures === 0 ? 0 : 1);
