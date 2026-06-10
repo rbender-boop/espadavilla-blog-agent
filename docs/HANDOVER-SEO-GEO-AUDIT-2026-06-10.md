@@ -15,12 +15,14 @@ LIVE site repo (`rbender-boop/espadavilla-com`).
   - `ad1a916` — the 5 bug fixes (pillar map, sitemap lastmod, datePublished, CTAs, length-retry)
   - `634fde5` — llms.txt publish target + IndexNow ping + WhatsApp number fix
   - `ca53b86` — per-post cluster-mapped hero images
-- **Only uncommitted change:** `scripts/rerender-published.ts` (brought up to
-  parity with the live publish path during the re-render of the two existing posts).
+- Branch `main`: everything through `ca53b86` is pushed; `scripts/rerender-published.ts`
+  was subsequently committed and pushed as well.
+- **Pending push:** `f3af012` — facts.ts WhatsApp number corrected to the
+  canonical `+1 (734) 755-6357` (see §6, which reverses the earlier "fix").
 
-### Push command (covers the one remaining file)
+### Push command (covers the pending facts.ts commit)
 ```
-cd "C:\Users\rbend\Desktop\Claude Projects\espadavilla-blog-agent"; git add -A; git commit -m "chore(rerender): parity with live publish path (cluster image + llms.txt + summary/sources)"; git push origin main
+cd "C:\Users\rbend\Desktop\Claude Projects\espadavilla-blog-agent"; git push origin main
 ```
 
 ---
@@ -103,11 +105,19 @@ cd "C:\Users\rbend\Desktop\Claude Projects\espadavilla-blog-agent"; git add -A; 
 
 ---
 
-## 6. Data / canonical-fact fix (commit `634fde5`)
+## 6. Data / canonical-fact fix — CORRECTED 2026-06-09 (commit `f3af012`)
 
-- `src/lib/facts.ts` — WhatsApp number corrected `+1 (734) 755-6357` →
-  `+1 (248) 254-3406` to match the live `espadavilla.com/property-facts` (the
-  declared source of truth). This feeds every drafter prompt.
+- ⚠️ **The original fix in `634fde5` went the WRONG direction.** It changed
+  `src/lib/facts.ts` from `+1 (734) 755-6357` → `+1 (248) 254-3406` to match the
+  live `espadavilla.com/property-facts` page — but the LIVE SITE was the thing
+  that had drifted. Canonical (per Rob / CANONICAL-FACTS.md) is
+  **+1 (734) 755-6357** (Rob's WhatsApp).
+- **Corrected in `f3af012`:** facts.ts now carries +1 (734) 755-6357 in both the
+  header comment and the `booking` line. This feeds every drafter prompt, so
+  future posts will carry the right number.
+- The live site itself was fixed the same day — see §10, commit `697924a`.
+- Lesson encoded in the facts.ts comment: when canonical and the live site
+  disagree, canonical wins; reconcile the SITE to canonical, not the reverse.
 
 ## 7. Security cleanup (commit `634fde5`)
 
@@ -116,7 +126,7 @@ cd "C:\Users\rbend\Desktop\Claude Projects\espadavilla-blog-agent"; git add -A; 
   so nothing leaked, but it's been blanked. The real value lives only in
   `.env.local` (gitignored) and Vercel env.
 
-## 8. The re-render script (UNCOMMITTED — the one pending file)
+## 8. The re-render script (now committed and pushed)
 
 - `scripts/rerender-published.ts` — upgraded from the golfvilla-era version to
   full parity with the live publish path: now passes `summary`, `sources`, the
@@ -149,10 +159,25 @@ agent's GitHub client / scripts. Listed here for the record:
   `villa-espada-exterior-front.jpg` (stay cluster) + ImageObject/og dims.
 - `96419966` — re-rendered `tennis-and-padel-cap-cana` with hero
   `11_Establos_aerial_1.jpg` (experience cluster) + ImageObject/og dims.
+- `697924a` — **NAP phone unification (2026-06-09 session, committed in the
+  LOCAL site checkout, push pending by Rob).** Replaced the wrong
+  `+1 (248) 254-3406` with the canonical `+1 (734) 755-6357` in every observed
+  format — `tel:+1...`, `wa.me/1...`, JSON-LD `"telephone"`, and visible text.
+  8 files / 16 replacements: `index.html` (JSON-LD ×2, wa.me sameAs ×2, footer
+  WA link), `contact.html`, `property-facts.html` (the canonical facts page
+  itself displayed 248 in the facts table, booking prose, and footer wa.me —
+  all fixed), `rates.html`, `villa.html`, `llms.txt`, `llms-full.txt`,
+  `blog/caribbean-golf-vacation-guide.html`. Verified zero 248 occurrences
+  remain; `wa.me/17347556357` ×4 and `tel:+17347556357` ×2 confirmed
+  well-formed. Generator script (`golf-courses/build_golf_seo.py`), `js/main.js`,
+  `sitemap.xml`, `vercel.json` never contained the number. Same fix pattern as
+  golfvilla-com commit `54da4c3` (80 files).
+  - Site checkout location: `C:\Users\rbend\Desktop\Claude Projects\GOLFVILLA-WEBSITE\VILLA-ESPADA-PACKAGE\WEBSITE`
+  - Push: `cd "C:\Users\rbend\Desktop\Claude Projects\GOLFVILLA-WEBSITE\VILLA-ESPADA-PACKAGE\WEBSITE"; git push origin main`
 
-All three auto-deployed via Vercel and were verified live (post-hero img,
+The first three auto-deployed via Vercel and were verified live (post-hero img,
 ImageObject, og:image:width all present; datePublished preserved, dateModified
-= 2026-06-10).
+= 2026-06-10). `697924a` deploys when Rob pushes.
 
 NOTE: the IndexNow key file `3348bc6a409522753cec189cdfca4c19.txt` will be
 auto-committed to the site repo root on the NEXT pipeline publish (not yet
@@ -181,6 +206,11 @@ present, by design).
 
 ## 13. Reminder for the operator
 
-- All commits are yours to push (per your workflow). The push command is in §1.
+- All commits are yours to push (per your workflow). **Two pushes pending:**
+  1. Agent repo (`f3af012`, facts.ts 734 fix): `cd "C:\Users\rbend\Desktop\Claude Projects\espadavilla-blog-agent"; git push origin main`
+  2. Site repo (`697924a`, NAP fix): `cd "C:\Users\rbend\Desktop\Claude Projects\GOLFVILLA-WEBSITE\VILLA-ESPADA-PACKAGE\WEBSITE"; git push origin main`
+- Push BOTH before the next pipeline cron (Thursday 13:00 UTC) — if the agent's
+  Vercel deploy is rebuilt without the facts.ts push, drafts would still carry
+  the wrong 248 number.
 - SQL was run directly via Supabase MCP during the audit (read-only checks);
   no schema migrations were applied this session.
