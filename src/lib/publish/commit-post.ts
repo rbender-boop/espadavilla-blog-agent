@@ -16,10 +16,13 @@ import { postUrl, postRepoPath, SITE_ORIGIN } from '../links';
 import { renderPostHtml } from './render-post';
 import { addUrlToSitemap } from './update-sitemap';
 import { upsertIndexCard } from './update-index';
+import { upsertLlmsEntry } from './update-llms';
+import { indexNowKey, indexNowKeyPath, pingIndexNow } from './indexnow';
 import { getFile, commitFiles, type RepoFile } from './github';
 
 const SITEMAP_PATH = 'sitemap.xml';
 const INDEX_PATH = 'blog/index.html';
+const LLMS_PATH = 'llms.txt';
 
 type DraftRow = {
   id: string;
@@ -147,10 +150,21 @@ export async function publishApprovedDraft(draftId: string): Promise<PublishResu
       keywords,
     });
 
-    // 2. Read current index + sitemap from the repo (resolve live, don't guess).
-    const [indexFile, sitemapFile] = await Promise.all([getFile(INDEX_PATH), getFile(SITEMAP_PATH)]);
+    // 2. Read current index + sitemap + llms.txt (+ IndexNow key file) from the
+    //    repo (resolve live, don't guess).
+    const inKey = indexNowKey();
+    const [indexFile, sitemapFile, llmsFile, keyFile] = await Promise.all([
+      getFile(INDEX_PATH),
+      getFile(SITEMAP_PATH),
+      getFile(LLMS_PATH),
+      inKey ? getFile(indexNowKeyPath(inKey)) : Promise.resolve(null),
+    ]);
 
     const files: RepoFile[] = [{ path: repoPath, content: postHtml }];
+
+    // IndexNow key file: serve <key>.txt at the site root (required by the
+    // protocol before pings are accepted). Committed once, then idempotent.
+    if (inKey && !keyFile) files.push({ path: indexNowKeyPath(inKey), content: inKey });
 
     // 3. Blog index (create if missing; idempotent insert).
     const indexResult = upsertIndexCard(indexFile?.content ?? null, {
@@ -176,9 +190,29 @@ export async function publishApprovedDraft(draftId: string): Promise<PublishResu
       console.warn('[commit-post] sitemap.xml not found in repo — publishing post + index without sitemap update');
     }
 
+    // 4b. llms.txt — AI-crawler discovery file. Upsert this post's entry (a
+    // refresh to the same URL updates the existing line). Hand-curated sections
+    // are never touched; skip gracefully if the file is unexpectedly absent.
+    if (llmsFile) {
+      const llmsResult = upsertLlmsEntry(llmsFile.content, {
+        url,
+        title: draft.meta_title,
+        description: draft.meta_description,
+        dateISO: modifiedISO,
+      });
+      if (llmsResult.changed) files.push({ path: LLMS_PATH, content: llmsResult.txt });
+    } else {
+      console.warn('[commit-post] llms.txt not found in repo — publishing without llms.txt update');
+    }
+
     // 5. One atomic commit to main.
     const message = `blog: publish "${draft.meta_title}" (${slug})`;
     const { commitUrl } = await commitFiles(files, message);
+
+    // 5b. IndexNow ping (best-effort — feeds Bing/Copilot/ChatGPT-search;
+    // Google freshness is covered by the sitemap lastmod). Never blocks/fails
+    // the publish. Skipped automatically if INDEXNOW_KEY is unset.
+    const indexNow = await pingIndexNow([url, `${SITE_ORIGIN}/blog`]);
 
     // 6. Record success. A refresh keeps the ORIGINAL publish timestamp so the
     // page's datePublished stays stable across the whole refresh chain.
@@ -195,7 +229,7 @@ export async function publishApprovedDraft(draftId: string): Promise<PublishResu
       run_type: 'publish',
       status: 'success',
       items_processed: 1,
-      metadata: { draft_id: draftId, slug, live_url: url, commit_url: commitUrl, files: files.map((f) => f.path) },
+      metadata: { draft_id: draftId, slug, live_url: url, commit_url: commitUrl, files: files.map((f) => f.path), indexnow: indexNow },
       completed_at: now,
     });
 

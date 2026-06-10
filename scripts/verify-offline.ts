@@ -12,6 +12,7 @@ import { readFileSync } from 'node:fs';
 import { renderPostHtml } from '../src/lib/publish/render-post';
 import { addUrlToSitemap } from '../src/lib/publish/update-sitemap';
 import { upsertIndexCard } from '../src/lib/publish/update-index';
+import { upsertLlmsEntry } from '../src/lib/publish/update-llms';
 import { checkVillaFacts } from '../src/lib/facts';
 import { checkNegativeList } from '../src/lib/keywords';
 import { postUrl } from '../src/lib/links';
@@ -190,6 +191,39 @@ const POS_CURRENT: GscRow[] = [{ query: 'https://www.golfvilla.com/blog/punta-es
 const POS_PRIOR:   GscRow[] = [{ query: 'https://www.golfvilla.com/blog/punta-espada-guide', clicks: 8, impressions: 150, ctr: 0.05, position: 12 }];
 const posDecayed = detectDecay(POS_CURRENT, POS_PRIOR, [DECAY_POSTS[0]!], { imprDecayThreshold: 0.1 }); // high threshold so impr signal doesn't fire
 check('decay: position worsening detected', posDecayed.some((c) => c.signal === 'position_decay'), `got: ${posDecayed.map((c) => c.signal).join(',')}`);
+
+// 8. llms.txt upsert (modeled on the LIVE espadavilla.com/llms.txt structure)
+const LLMS_FIXTURE = [
+  '# Villa Espada — Cap Cana, Dominican Republic',
+  '',
+  '## Key Facts',
+  '- Bedrooms: 8 | Bathrooms: 9.5 | Max guests: 22',
+  '',
+  '## Pillar Guides',
+  '- [Cap Cana Travel Guide](https://www.espadavilla.com/blog/cap-cana-guide): Beaches, golf, marina',
+  '',
+  '## Best Answer Summary',
+  'Villa Espada is best suited for luxury golf trips.',
+  '',
+  '## Last Updated',
+  '2026-05-28',
+  '',
+].join('\n');
+const llmsEntry = { url: postUrl('tennis-and-padel-cap-cana'), title: 'Tennis and Padel Cap Cana', description: 'Courts, coaching, Nadal Center.', dateISO: '2026-06-09' };
+const l1 = upsertLlmsEntry(LLMS_FIXTURE, llmsEntry);
+check('llms: insert creates Latest Guides section', l1.changed && l1.txt.includes('## Latest Guides'));
+check('llms: entry line rendered', l1.txt.includes(`- [Tennis and Padel Cap Cana](${llmsEntry.url}): Courts, coaching, Nadal Center.`));
+check('llms: section placed after Pillar Guides, before Best Answer', l1.txt.indexOf('## Latest Guides') > l1.txt.indexOf('## Pillar Guides') && l1.txt.indexOf('## Latest Guides') < l1.txt.indexOf('## Best Answer Summary'));
+check('llms: hand-curated sections untouched', l1.txt.includes('- Bedrooms: 8 | Bathrooms: 9.5 | Max guests: 22') && l1.txt.includes('- [Cap Cana Travel Guide](https://www.espadavilla.com/blog/cap-cana-guide): Beaches, golf, marina'));
+check('llms: Last Updated bumped', l1.txt.includes('## Last Updated\n2026-06-09'));
+const l2 = upsertLlmsEntry(l1.txt, llmsEntry);
+check('llms: idempotent on re-run', l2.changed === false);
+const l3 = upsertLlmsEntry(l1.txt, { ...llmsEntry, description: 'Updated after refresh.' });
+check('llms: refresh updates the existing line (no duplicate)', l3.changed && l3.txt.includes(': Updated after refresh.') && (l3.txt.match(new RegExp(llmsEntry.url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) ?? []).length === 1);
+const l4 = upsertLlmsEntry(l3.txt, { url: postUrl('second-post'), title: 'Second Post', description: 'Another guide.', dateISO: '2026-06-10' });
+check('llms: second post inserted at top of Latest Guides', l4.changed && l4.txt.indexOf('- [Second Post]') < l4.txt.indexOf('- [Tennis and Padel Cap Cana]'));
+const l5 = upsertLlmsEntry(LLMS_FIXTURE, { url: 'https://www.espadavilla.com/blog/cap-cana-guide', title: 'Cap Cana Travel Guide 2026', description: 'Refreshed guide.', dateISO: '2026-06-09' });
+check('llms: URL already in Pillar Guides updated in place, never duplicated', l5.changed && (l5.txt.match(/cap-cana-guide\)/g) ?? []).length === 1 && !l5.txt.includes('## Latest Guides'));
 
 console.log(`\n${failures === 0 ? 'ALL CHECKS PASSED' : `${failures} CHECK(S) FAILED`}`);
 process.exit(failures === 0 ? 0 : 1);
