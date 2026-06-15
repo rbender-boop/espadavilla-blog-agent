@@ -29,6 +29,9 @@ export async function GET() {
       GITHUB_TOKEN_ESPADAVILLA: present('GITHUB_TOKEN_ESPADAVILLA'),
       ESPADAVILLA_REPO: present('ESPADAVILLA_REPO'),
       CRON_SECRET: present('CRON_SECRET'),
+      GSC_SERVICE_ACCOUNT_JSON: present('GSC_SERVICE_ACCOUNT_JSON'),
+      GSC_IMPERSONATED_SUBJECT: present('GSC_IMPERSONATED_SUBJECT'),
+      GSC_SITE_URL: present('GSC_SITE_URL'),
     },
   });
 }
