@@ -1,17 +1,17 @@
 # GolfVilla Blog Agent — Operations Handover
 
-**Last updated:** 2026-06-07 (the day it went live)
-**Status:** ✅ LIVE and operational. First post published. Weekly cron armed.
+**Last updated:** 2026-06-27 (2x/week cadence + failure-monitor staleness check — see `HANDOVER-2026-06-27.md`)
+**Status:** ✅ LIVE and operational. 6 posts published. Publishing 2x/week (Mon + Thu).
 **Purpose:** Single reference for operating, debugging, and extending the autonomous weekly SEO blog agent for golfvilla.com. Read this first in any future session.
 
 ---
 
 ## 0. TL;DR — current state
 
-- The agent drafts one SEO blog post/week for **golfvilla.com**, sends it to Rob on WhatsApp, and on **"yes"** commits the rendered post + blog index + sitemap to `rbender-boop/golfvilla-com` `main` in one atomic commit. Vercel auto-deploys.
-- **First post is LIVE:** https://www.golfvilla.com/blog/corales-puntacana-championship-2026-caribbean-golf-villas (published 2026-06-07, golfvilla-com commit `b28a05d1`).
-- **Next auto-draft:** Monday **2026-06-08, 9:00 AM ET** → topic *"Dominican Republic Tourism Is Surging…"* (priority 20). Then every Monday 9 AM ET.
-- Both apps deployed & green on Vercel. Inbound WhatsApp routing between the two agents is fixed (see §6, the 2026-06-07 incident).
+- The agent drafts **two SEO blog posts/week** for **espadavilla.com** (Mon + Thu, 9 AM ET), sends each to Rob on WhatsApp, and on **"yes"** commits the rendered post + blog index + sitemap to `rbender-boop/espadavilla-com` `main` in one atomic commit. Vercel auto-deploys.
+- **6 posts published** as of 2026-06-25. 15 queued topics remain.
+- **Next auto-drafts:** Mon 2026-06-30 and Thu 2026-07-03, both at 13:00 UTC (9 AM ET).
+- Both apps deployed & green on Vercel. Inbound WhatsApp routing between the two agents is fixed (EV prefix for espadavilla, GV prefix for golfvilla).
 - **Nothing is required of Rob** except replying to the weekly WhatsApp draft (`yes` / `no` / paste edit).
 
 ---
@@ -76,10 +76,13 @@
 
 | Cron | Schedule | Purpose |
 |---|---|---|
-| `draft-weekly-post` | `0 13 * * 1` (Mon 9am ET) | draft next topic + WhatsApp it |
+| `draft-weekly-post` | `0 13 * * 1,4` (Mon + Thu 9am ET) | enqueue next topic job |
+| `blog-pipeline-worker` | `*/2 13-16 * * 1,4` | draft, send for approval, publish |
 | `drain-approved` | `*/15 * * * *` | publish anything left in `approved` (idempotent) |
 | `expire-stale-drafts` | `0 9 * * *` | auto-skip drafts unanswered > 72h, re-queue topic |
-| `failure-monitor` | `0 * * * *` | WhatsApp digest of failed runs |
+| `failure-monitor` | `0 * * * *` | WhatsApp digest of failed runs + dead-man's staleness alert (3h threshold, 12h cooldown) |
+| `post-refresh` | `0 11 * * 4` (Thu) | GSC decay detection → refresh topic queuing |
+| `gsc-topics` | `0 12 * * 4` (Thu) | pull new topics from GSC demand signals |
 | `voice-refinement` | `0 15 * * 0` (Sun) | learn from Rob's edits → `blog_voice_memories` |
 
 Vercel sends scheduled crons their `Authorization: Bearer <CRON_SECRET>` automatically.
