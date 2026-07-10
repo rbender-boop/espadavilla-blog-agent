@@ -9,6 +9,7 @@ import { runFailureMonitor } from '@/lib/monitoring/failure-monitor';
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store'; // never serve supabase reads from Next's Data Cache (parity w/ golfvilla 2026-07-10 stale-read fix; client already forces no-store)
 
 export async function GET(req: Request) {
   if (!isAuthorizedCron(req)) return new NextResponse('Unauthorized', { status: 401 });
@@ -26,6 +27,7 @@ export async function GET(req: Request) {
       error_message: message,
       completed_at: new Date().toISOString(),
     });
-    return NextResponse.json({ ok: false, error: message });
+    // Non-2xx so Vercel's cron dashboard/alerting registers the failure.
+    return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }
