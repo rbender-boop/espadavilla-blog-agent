@@ -8,5 +8,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: Request) {
   if (!isAuthorizedCron(req)) return new NextResponse('Unauthorized', { status: 401 });
   const summary = await runPipelineWorker();
-  return NextResponse.json({ ok: summary.status !== 'failed', ...summary });
+  const failed = summary.status === 'failed';
+  // Non-2xx on a failed worker run so Vercel's cron dashboard registers it.
+  return NextResponse.json({ ok: !failed, ...summary }, failed ? { status: 500 } : undefined);
 }

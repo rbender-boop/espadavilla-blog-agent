@@ -42,5 +42,10 @@ export async function GET(req: Request) {
       .update({ status, completed_at: new Date().toISOString(), items_processed: results.filter((r) => r.ok).length, error_message: error, metadata: { duration_ms: Date.now() - start, results } })
       .eq('id', runId);
   }
-  return NextResponse.json({ ok: status !== 'failure', status, results, error });
+  // 'failure' (publishAllApproved threw) → non-2xx so Vercel registers it.
+  // 'partial' (some drafts failed, cron itself ran fine) stays 2xx — fail-soft.
+  return NextResponse.json(
+    { ok: status !== 'failure', status, results, error },
+    status === 'failure' ? { status: 500 } : undefined,
+  );
 }

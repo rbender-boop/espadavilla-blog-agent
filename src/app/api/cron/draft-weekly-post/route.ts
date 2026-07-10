@@ -27,6 +27,7 @@ export async function GET(req: Request) {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     if (runId) await supabase.from('blog_agent_runs').update({ status: 'failure', completed_at: new Date().toISOString(), error_message: message }).eq('id', runId);
-    return NextResponse.json({ ok: false, error: message });
+    // Non-2xx so Vercel's cron dashboard/alerting registers the failure.
+    return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }

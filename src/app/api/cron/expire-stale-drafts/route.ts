@@ -39,5 +39,9 @@ export async function GET(req: Request) {
       .update({ status, completed_at: new Date().toISOString(), items_processed: result?.post_drafts ?? 0, error_message: error ?? (result?.errors.join('; ') || null), metadata: { duration_ms: Date.now() - start, ...result } })
       .eq('id', runRow.id);
   }
-  return NextResponse.json({ ok: status === 'success', ...result, error });
+  // Non-2xx on failure so Vercel's cron dashboard/alerting registers it.
+  return NextResponse.json(
+    { ok: status === 'success', ...result, error },
+    status === 'failure' ? { status: 500 } : undefined,
+  );
 }

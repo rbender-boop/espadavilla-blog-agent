@@ -38,6 +38,7 @@ export async function GET(req: Request) {
         .update({ status: 'failure', completed_at: new Date().toISOString(), error_message: message })
         .eq('id', runRow.id);
     }
-    return NextResponse.json({ ok: false, error: message });
+    // Non-2xx so Vercel's cron dashboard/alerting registers the failure.
+    return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }
