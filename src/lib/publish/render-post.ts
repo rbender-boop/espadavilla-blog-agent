@@ -424,8 +424,7 @@ function sanitizeHref(href: string): string | null {
   const h = href.trim();
   if (/^https?:\/\//i.test(h)) return escapeAttr(h);
   if (/^\/[^\s]*$/.test(h)) return escapeAttr(h);            // site-relative
-  if (/^mailto:[^\s]+$/i.test(h)) return escapeAttr(h);
-  return null;                                                // drop javascript:, etc.
+  return null;                                                // drop mailto:, javascript:, tel:, etc.
 }
 
 /* ============================================================

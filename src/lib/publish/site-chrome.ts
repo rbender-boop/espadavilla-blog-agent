@@ -76,9 +76,9 @@ export function siteFooter(): string {
       <div class="footer-brand"><span class="logo-top">Villa Espada</span><span class="logo-sub">Cap Cana · Dominican Republic</span><p>8-bedroom luxury villa on Fairway 5 of Punta Espada Golf Course. Full staff. Member rates. Two golf carts.</p></div>
       <div class="footer-col"><h4>Villa</h4><ul><li><a href="/villa.html">The Villa</a></li><li><a href="/golf.html">Golf</a></li><li><a href="/amenities.html">Amenities</a></li></ul></div>
       <div class="footer-col"><h4>Book</h4><ul><li><a href="/rates.html">Rates</a></li><li><a href="/contact.html">Contact</a></li><li><a href="/faq.html">FAQ</a></li><li><a href="/property-facts">Property Facts</a></li></ul></div>
-      <div class="footer-col"><h4>Contact</h4><ul><li><a href="mailto:reservations@espadavilla.com">Email Us</a></li></ul></div>
+      <div class="footer-col"><h4>Contact</h4><ul><li><a href="/contact">Contact Us</a></li></ul></div>
     </div>
-    <div class="footer-bottom"><p>© 2026 Villa Espada · espadavilla.com</p><p><span class="gold">Direct:</span> reservations@espadavilla.com</p></div>
+    <div class="footer-bottom"><p>© 2026 Villa Espada · espadavilla.com</p><p><span class="gold">Direct:</span> <a href="/contact" style="color:inherit;text-decoration:none;">Book direct</a></p></div>
   </div>
 </footer>
 <a href="/contact.html" class="float-book">Book Now</a>`;

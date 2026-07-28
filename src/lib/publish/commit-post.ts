@@ -14,6 +14,7 @@ import { supabase } from '../supabase';
 import { sendWhatsAppToOwner } from '../unipile';
 import { postUrl, postRepoPath, SITE_ORIGIN } from '../links';
 import { renderPostHtml } from './render-post';
+import { guardContactInfo } from './contact-info-guard';
 import { pickPostImage } from './blog-images';
 import { addUrlToSitemap } from './update-sitemap';
 import { upsertIndexCard } from './update-index';
@@ -136,7 +137,7 @@ export async function publishApprovedDraft(draftId: string): Promise<PublishResu
 
     // 1. Render the post HTML. Cluster-mapped hero image (stable per slug).
     const heroImage = pickPostImage(slug, articleSection ?? null);
-    const postHtml = renderPostHtml({
+    const rawPostHtml = renderPostHtml({
       slug,
       meta_title: draft.meta_title,
       meta_description: draft.meta_description,
@@ -152,6 +153,21 @@ export async function publishApprovedDraft(draftId: string): Promise<PublishResu
       keywords,
       image: heroImage,
     });
+
+    // 1b. Pre-publish contact-info guard — block if banned patterns found.
+    const guardResult = guardContactInfo(rawPostHtml);
+    if (guardResult.blocked) {
+      await supabase
+        .from('blog_post_drafts')
+        .update({ status: 'approved', updated_at: new Date().toISOString() })
+        .eq('id', draftId)
+        .eq('status', 'publishing');
+      return { ok: false, draft_id: draftId, error: guardResult.reason };
+    }
+    if (guardResult.warnings.length > 0) {
+      console.warn('[commit-post] contact-info-guard auto-fixes:', guardResult.warnings.join('; '));
+    }
+    const postHtml = guardResult.html; // use auto-fixed version
 
     // 2. Read current index + sitemap + llms.txt (+ IndexNow key file) from the
     //    repo (resolve live, don't guess).

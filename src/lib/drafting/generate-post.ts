@@ -357,6 +357,7 @@ function buildSystemPrompt(memoryBlock: string): string {
     '- Timely/external facts (tournament dates, tourism stats, rankings as of a date, weather, sargassum): you MUST run web_search and put each asserted fact in "sources" with its URL. Do NOT assert a date or statistic from memory.',
     '- If web_search cannot confirm a timely fact, write around it rather than guessing.',
     '- Schema downstream is BlogPosting + exactly one FAQPage. Do not reference VacationRental.',
+    '- CONTACT INFO (HARD): Never include visible email addresses, phone numbers, or tel: links in body_markdown, FAQ answers, or social_captions. No exceptions — not even rob@espadavilla.com. Email and phone belong ONLY in JSON-LD schema (handled outside the post body). For contact CTAs, write a /contact or https://www.espadavilla.com/contact link (label "Contact Us", "Inquire & Book", or "Book direct") — never a mailto: link, bare email address, or raw phone number in visible text.',
   ].join('\n');
 }
 
