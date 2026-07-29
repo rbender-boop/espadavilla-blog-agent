@@ -57,9 +57,9 @@ export function upsertIndexCard(currentHtml: string | null, card: IndexCard): { 
   return { html: currentHtml, changed: false };
 }
 
-/** One list row in the live index's format: <li><a href="/blog/slug.html">Title</a></li> */
+/** One list row — extensionless URL (cleanUrls: true; .html 308s). */
 function renderListItem(card: IndexCard): string {
-  return `<li><a href="/blog/${escapeAttr(card.slug)}.html">${escapeHtml(card.title)}</a></li>`;
+  return `<li><a href="/blog/${escapeAttr(card.slug)}">${escapeHtml(card.title)}</a></li>`;
 }
 
 /** Full Villa Espada listing page — only used if blog/index.html is absent. */
@@ -94,7 +94,7 @@ ${mobileMenu()}
   <div class="page-hero-overlay"></div>
   <div class="page-hero-content"><span class="overline">Expert Travel Guides</span><h1>Blog &amp; Guides</h1></div>
 </div>
-<div class="breadcrumb"><a href="/index.html">Home</a><span>›</span>Blog</div>
+<div class="breadcrumb"><a href="/">Home</a><span>›</span>Blog</div>
 <section style="background:white;padding:70px 0;">
   <div class="container">
     <div class="section-header"><span class="overline">Cap Cana &amp; Dominican Republic</span><h2>Expert Travel Guides</h2><div class="gold-divider"></div></div>

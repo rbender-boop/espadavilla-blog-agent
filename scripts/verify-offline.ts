@@ -84,16 +84,19 @@ check('sitemap: idempotent on re-run', !ins2.changed && ins2.xml === ins.xml);
 
 // 3. Blog index create + insert + idempotency + no-clobber of the hand-built index
 const idx1 = upsertIndexCard(null, { slug: SAMPLE.slug, title: SAMPLE.meta_title, description: SAMPLE.meta_description, publishedISO: SAMPLE.publishedISO });
-check('index: fresh page lists the card', idx1.changed && idx1.html.includes(`href="/blog/${SAMPLE.slug}.html"`));
+check('index: fresh page lists the card', idx1.changed && idx1.html.includes(`href="/blog/${SAMPLE.slug}"`));
 check('index: fresh page uses Villa Espada chrome', idx1.html.includes('Villa Espada') && idx1.html.includes('site-footer') && !/golfvilla/i.test(idx1.html));
 const idx2 = upsertIndexCard(idx1.html, { slug: SAMPLE.slug, title: SAMPLE.meta_title, description: SAMPLE.meta_description, publishedISO: SAMPLE.publishedISO });
 check('index: idempotent for same slug', !idx2.changed);
 const idx3 = upsertIndexCard(idx1.html, { slug: 'second-post', title: 'Second Post', description: 'Another one', publishedISO: '2026-06-14' });
-check('index: inserts a second distinct card', idx3.changed && idx3.html.includes('href="/blog/second-post.html"') && idx3.html.includes(`href="/blog/${SAMPLE.slug}.html"`));
+check('index: inserts a second distinct card', idx3.changed && idx3.html.includes('href="/blog/second-post"') && idx3.html.includes(`href="/blog/${SAMPLE.slug}"`));
 // Real espadavilla index is HAND-BUILT (no sentinels): insert must PRESERVE existing posts + chrome.
 const handBuilt = '<ul style="display:flex;gap:16px;"><li><a href="/blog/existing-post.html">Existing Post</a></li></ul><footer class="site-footer">Villa Espada</footer>';
 const idx4 = upsertIndexCard(handBuilt, { slug: 'brand-new', title: 'Brand New', description: 'x', publishedISO: '2026-06-14' });
-check('index: preserves hand-built index on insert', idx4.changed && idx4.html.includes('href="/blog/existing-post.html"') && idx4.html.includes('href="/blog/brand-new.html"') && idx4.html.includes('site-footer'));
+check('index: preserves hand-built index on insert', idx4.changed && idx4.html.includes('href="/blog/existing-post.html"') && idx4.html.includes('href="/blog/brand-new"') && idx4.html.includes('site-footer'));
+// New chrome checks: gtag present, no .html redirect-hop links emitted anywhere
+check('chrome: Google Ads gtag present on fresh index', idx1.html.includes('AW-18275005017') && idx1.html.includes('gtag/js?id=AW-18275005017'));
+check('chrome: no .html hrefs emitted by templates', !/href="\/[a-z-]+\.html"/.test(idx1.html));
 
 // 4. Villa-fact guard
 check('guard: clean body passes', !checkVillaFacts(SAMPLE.body_markdown).flagged);
