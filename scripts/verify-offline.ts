@@ -18,7 +18,7 @@ import { checkVillaFacts } from '../src/lib/facts';
 import { checkNegativeList } from '../src/lib/keywords';
 import { postUrl } from '../src/lib/links';
 import { scoreOverlap, type PublishedPost } from '../src/lib/drafting/overlap-score';
-import { selectOpportunities, clusterForQuery, isNegativeGeo, isOnTarget, isSoftAvoid } from '../src/lib/gsc/topic-select';
+import { selectOpportunities, clusterForQuery, isNegativeGeo, isOnTarget, isSoftAvoid, topicFingerprint, isRedundantIntent } from '../src/lib/gsc/topic-select';
 import { detectDecay, normUrl, type PublishedPostRef } from '../src/lib/gsc/decay-detector';
 import type { GscRow } from '../src/lib/gsc/client';
 
@@ -153,6 +153,43 @@ check('gsc: selects only the on-target page-2 opportunity', picks.length === 1 &
 check('gsc: candidate carries cluster + primary keyword', picks[0]?.cluster === 'stay' && picks[0]?.primary_keyword === 'cap cana villa with chef');
 check('gsc: candidate gets a non-empty working title', !!picks[0]?.title && picks[0]!.title.length > picks[0]!.query.length);
 check('gsc: soft-avoid never selected', !picks.some((p) => isSoftAvoid(p.query)));
+
+// 7b. Cannibalization guard — keyword variants of ONE intent must collapse to a
+// single topic. Regression cover for the four queued Punta Espada topics
+// ("punta espada / punta espada golf / punta espada golf club / punta espada
+// golf course") that the old exact-string dedupe let through, and which is
+// visible live as three pages splitting rank for the same query.
+check('fp: plural collapses',       topicFingerprint('golf villas') === topicFingerprint('golf villa'));
+check('fp: word order collapses',   topicFingerprint('villa golf') === topicFingerprint('golf villa'));
+check('fp: stopwords dropped',      topicFingerprint('villas on golf courses') === topicFingerprint('golf course villa'));
+check('fp: -es singularizes right', topicFingerprint('golf courses') === topicFingerprint('golf course'));
+check('intent: punta espada ~ punta espada golf',
+      isRedundantIntent('punta espada', 'punta espada golf'));
+check('intent: punta espada golf ~ punta espada golf course',
+      isRedundantIntent('punta espada golf', 'punta espada golf course'));
+check('intent: punta espada ~ punta espada golf club',
+      isRedundantIntent('punta espada', 'punta espada golf club'));
+check('intent: tee times is a distinct job',
+      !isRedundantIntent('punta espada', 'punta espada tee times'));
+check('intent: green fees is a distinct job',
+      !isRedundantIntent('punta espada', 'punta espada green fees'));
+check('intent: distinct comparisons stay distinct',
+      !isRedundantIntent('cap cana vs bavaro', 'cap cana vs casa de campo'));
+
+const CANNIBAL_ROWS = [
+  { query: 'punta espada',              clicks: 0, impressions: 67, ctr: 0, position: 12.0 },
+  { query: 'punta espada golf',         clicks: 0, impressions: 34, ctr: 0, position: 11.0 },
+  { query: 'punta espada golf club',    clicks: 0, impressions: 64, ctr: 0, position: 13.0 },
+  { query: 'punta espada golf course',  clicks: 0, impressions: 30, ctr: 0, position: 14.0 },
+  { query: 'punta espada tee times',    clicks: 0, impressions: 23, ctr: 0, position: 8.6 },
+];
+const cannibalPicks = selectOpportunities(CANNIBAL_ROWS, { minImpressions: 1, limit: 12 });
+check('gsc: punta espada ladder collapses to one topic (+ tee times)',
+      cannibalPicks.length === 2,
+      `got ${cannibalPicks.length}: ${cannibalPicks.map((p) => p.query).join(', ')}`);
+check('gsc: the highest-impression variant is the survivor',
+      cannibalPicks[0]?.query === 'punta espada',
+      `got ${cannibalPicks[0]?.query}`);
 
 // 8. Decay detector (Phase 4) — pure function, no DB/network.
 const OLD_DATE = '2025-01-01'; // > 90 days ago → eligible

@@ -53,6 +53,77 @@ function norm(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
+/* ============================================================
+ * TOPIC FINGERPRINTING (cannibalization guard)
+ * ============================================================
+ * `norm()` alone is exact-string matching, so "punta espada", "punta espada
+ * golf", "punta espada golf club" and "punta espada golf course" read as four
+ * distinct queries and each mints its own topic — which is exactly how
+ * espadavilla.com ended up with four queued Punta Espada topics all chasing one
+ * intent, and three live pages splitting the ranking signal for
+ * "punta espada golf course" (positions 45, 46, 67 — none winning).
+ *
+ * The fingerprint collapses a query to its intent: drop stopwords, singularize,
+ * sort tokens. Word order and plurality stop mattering.
+ */
+
+const FP_STOPWORDS = new Set([
+  'a', 'an', 'the', 'and', 'or', 'of', 'on', 'in', 'at', 'to', 'for',
+  'with', 'from', 'by', 'is', 'are', 'my', 'your', 'our',
+]);
+
+/**
+ * Generic head/modifier nouns that do NOT change search intent when appended to
+ * an already-specific phrase. "punta espada" vs "punta espada golf course" is
+ * one intent; "punta espada" vs "punta espada tee times" is two (tee times is
+ * a distinct job). Keep this list tight — every addition merges more topics.
+ */
+const GENERIC_MODIFIERS = new Set([
+  'golf', 'course', 'club', 'villa', 'rental', 'resort', 'holiday', 'vacation',
+]);
+
+/** Crude but CONSISTENT singularization — fingerprints only need determinism.
+ * Order matters: the -es cases must be tested before the bare -s case, and
+ * "sses" must be checked before "ses" so "glasses"→"glass" but "courses"→"course". */
+function singular(w: string): string {
+  if (w.length <= 3) return w;
+  if (w.endsWith('ies')) return `${w.slice(0, -3)}y`;
+  if (/(sses|ches|shes|xes|zes)$/.test(w)) return w.slice(0, -2);
+  if (w.endsWith('s') && !w.endsWith('ss')) return w.slice(0, -1);
+  return w;
+}
+
+/** Order- and plurality-insensitive intent key for a query or title. */
+export function topicFingerprint(s: string): string {
+  return fingerprintTokens(s).join(' ');
+}
+
+function fingerprintTokens(s: string): string[] {
+  return norm(s)
+    .split(' ')
+    .filter((w) => w && !FP_STOPWORDS.has(w))
+    .map(singular)
+    .sort();
+}
+
+/**
+ * True if `query` is the same intent as `other` — either an exact fingerprint
+ * match, or a subset whose only extra tokens are GENERIC_MODIFIERS.
+ */
+export function isRedundantIntent(query: string, other: string): boolean {
+  const a = fingerprintTokens(query);
+  const b = fingerprintTokens(other);
+  if (a.join(' ') === b.join(' ')) return true;
+  const [small, large] = a.length <= b.length ? [a, b] : [b, a];
+  if (small.length === 0) return false;
+  const largeSet = new Set(large);
+  if (!small.every((t) => largeSet.has(t))) return false; // not a subset
+  const smallSet = new Set(small);
+  const extra = large.filter((t) => !smallSet.has(t));
+  return extra.length > 0 && extra.every((t) => GENERIC_MODIFIERS.has(t));
+}
+
+
 /** Hard geo guard — NO-OP for espadavilla (NEGATIVE_TERMS is empty). Kept for
  *  engine + test compatibility; the "stay on Cap Cana" steer is soft (below). */
 export function isNegativeGeo(query: string): boolean {
@@ -155,6 +226,7 @@ export function selectOpportunities(rows: GscRow[], opts: SelectOpts = {}): GscC
   const limit = opts.limit ?? 12;
 
   const seen = new Set<string>();
+  const acceptedQueries: string[] = [];
   const out: GscCandidate[] = [];
 
   const ranked = [...rows].sort((a, b) => b.impressions - a.impressions || a.position - b.position);
@@ -168,9 +240,14 @@ export function selectOpportunities(rows: GscRow[], opts: SelectOpts = {}): GscC
     if (r.position < minPosition || r.position > maxPosition) continue;
     if (r.ctr > maxCtr) continue;
     if (!isOnTarget(r.query)) continue;
+    // Cannibalization guard: rows are sorted by impressions desc, so the first
+    // variant of an intent to arrive is the strongest one — keep it and drop
+    // the weaker morphological/word-order/generic-modifier variants.
+    if (acceptedQueries.some((prev) => isRedundantIntent(r.query, prev))) continue;
 
     const cluster = clusterForQuery(r.query) ?? DEFAULT_CLUSTER;
     seen.add(q);
+    acceptedQueries.push(r.query);
     out.push({
       query: r.query,
       cluster: cluster.slug,

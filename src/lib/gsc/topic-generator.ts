@@ -13,7 +13,7 @@
 
 import { supabase } from '../supabase';
 import { querySearchAnalytics, type GscRow } from './client';
-import { selectOpportunities, type GscCandidate, type SelectOpts } from './topic-select';
+import { selectOpportunities, isRedundantIntent, type GscCandidate, type SelectOpts } from './topic-select';
 import { analyzeIntentOverlap } from '../drafting/overlap';
 
 // GSC topics sit behind the curated queue (seed 50–100, strategy 110–210).
@@ -54,18 +54,22 @@ function envSelectOpts(): SelectOpts {
 }
 
 /** Existing topics' normalized titles + primary keywords (any non-retired status). */
-async function loadExistingKeys(): Promise<{ titles: Set<string>; primaries: Set<string> }> {
+async function loadExistingKeys(): Promise<{ titles: Set<string>; primaries: Set<string>; primaryList: string[] }> {
   const titles = new Set<string>();
   const primaries = new Set<string>();
+  const primaryList: string[] = [];
   const { data } = await supabase
     .from('blog_topics')
     .select('title, primary_keyword, status')
     .in('status', ['queued', 'drafting', 'published']);
   for (const row of data ?? []) {
     if (row.title) titles.add(norm(row.title));
-    if (row.primary_keyword) primaries.add(norm(row.primary_keyword));
+    if (row.primary_keyword) {
+      primaries.add(norm(row.primary_keyword));
+      primaryList.push(row.primary_keyword);
+    }
   }
-  return { titles, primaries };
+  return { titles, primaries, primaryList };
 }
 
 export type GenerateOpts = SelectOpts & {
@@ -91,6 +95,7 @@ export async function generateTopicsFromGsc(opts: GenerateOpts = {}): Promise<Ge
   const skipped: Array<{ query: string; reason: string }> = [];
   const toInsert: Array<{ candidate: GscCandidate; pillar: string | null }> = [];
   const batchPrimaries = new Set<string>();
+  const batchQueries: string[] = [];
 
   for (const c of candidates) {
     const primaryKey = norm(c.primary_keyword);
@@ -101,6 +106,19 @@ export async function generateTopicsFromGsc(opts: GenerateOpts = {}): Promise<Ge
     }
     if (batchPrimaries.has(primaryKey)) {
       skipped.push({ query: c.query, reason: 'duplicate within this batch' });
+      continue;
+    }
+    // 1b. Cannibalization guard — same INTENT as something already queued or
+    // already accepted this batch, even if the literal keyword differs
+    // ("punta espada" vs "punta espada golf course").
+    const clashExisting = existing.primaryList.find((p) => isRedundantIntent(c.primary_keyword, p));
+    if (clashExisting) {
+      skipped.push({ query: c.query, reason: `same intent as queued topic "${clashExisting}"` });
+      continue;
+    }
+    const clashBatch = batchQueries.find((p) => isRedundantIntent(c.primary_keyword, p));
+    if (clashBatch) {
+      skipped.push({ query: c.query, reason: `same intent as batch topic "${clashBatch}"` });
       continue;
     }
     // 2. near-duplicate of a PUBLISHED post (same job + angle)? Phase 2 router.
@@ -114,6 +132,7 @@ export async function generateTopicsFromGsc(opts: GenerateOpts = {}): Promise<Ge
       continue;
     }
     batchPrimaries.add(primaryKey);
+    batchQueries.push(c.primary_keyword);
     toInsert.push({ candidate: c, pillar: overlap.pillarHint });
   }
 
