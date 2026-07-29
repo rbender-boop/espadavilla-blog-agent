@@ -45,6 +45,7 @@ async function main() {
     .from('blog_post_drafts')
     .select('id, topic_id, slug, meta_title, meta_description, h1, summary, body_markdown, edited_content, faq, sources, word_count, published_at, updated_at, live_url')
     .eq('slug', slug)
+    .eq('status', 'published')
     .single();
 
   if (error || !draft) throw new Error(`draft not found for slug "${slug}": ${error?.message ?? 'no row'}`);
