@@ -39,7 +39,7 @@ export const CANONICAL_FACTS = {
     beaches: 'Private access to Eden Roc Beach Club and Juanillo Beach (~8 min by golf cart).',
     airport: '~20-minute private transfer from Punta Cana International Airport (PUJ).',
     policy: 'Check-in 3:00 PM / check-out 11:00 AM. No pets. Payment by credit card or USD wire.',
-    booking: 'Direct only at espadavilla.com (no third-party commission). Contact rob@espadavilla.com or WhatsApp Rob at https://wa.me/17347556357.',
+    booking: 'Direct only at espadavilla.com (no third-party commission). All inquiries via the contact form at https://www.espadavilla.com/contact.',
   },
   rates: {
     low: { usd: 2500, label: 'low', minNights: 3 },
