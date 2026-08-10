@@ -32,6 +32,7 @@ import { getBlogMemoryPromptBlock } from '../voice-memory';
 import { resolveMoneyLinks } from '../links';
 import { analyzeIntentOverlap } from './overlap';
 import type { OverlapResult } from './overlap-score';
+import { humanizeBody } from './humanize';
 import { sendDraftForApproval } from '../whatsapp/send-draft';
 import { sendWhatsAppToOwner } from '../unipile';
 import type { JobRow, JobStep } from '../jobs/job-store';
@@ -231,6 +232,20 @@ async function enforceStep(job: JobRow, deadline: number): Promise<StepResult> {
     post = { ...post, meta_description: post.meta_description.slice(0, MAX_DESC).trim() };
     notes.push('meta_description hard-trimmed to 155 chars');
   }
+
+  // Structure-preserving humanization pass (blader/humanizer). Runs on the
+  // length-valid body, BEFORE the fact guards, so the guards validate the text
+  // that is actually persisted. Budget-safe (deadline-aware callModel) and
+  // fail-open — a bad, empty, or aborted rewrite keeps the original body.
+  // Skipped when the tick lacks headroom; disable entirely with HUMANIZE_DRAFTS=false.
+  if (deadline - Date.now() > 20_000) {
+    const h = await humanizeBody(post.body_markdown, (p) => callModel(p, deadline));
+    if (h.applied) post = { ...post, body_markdown: h.body };
+    notes.push(h.note);
+  } else {
+    notes.push('humanize skipped: insufficient budget this tick');
+  }
+
   return { kind: 'advance', next: 'guard', state: { post, notes } };
 }
 
