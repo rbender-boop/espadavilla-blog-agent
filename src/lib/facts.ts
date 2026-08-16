@@ -32,7 +32,7 @@ export const CANONICAL_FACTS = {
       'two maids (daily housekeeping)',
       'private transportation + airport transfers',
       'two 6-person golf carts',
-      'club member guest-rate golf at Punta Espada and Las Iguanas',
+      'club member guest-rate tee times at Punta Espada (Las Iguanas played at regular rates)',
     ],
     notAllInclusive: 'NOT all-inclusive: full staff is included in the nightly rate, but food and groceries are billed at cost with no markup.',
     pools: 'Infinity pool, rooftop pool, and a 16-person hot tub.',
@@ -42,10 +42,10 @@ export const CANONICAL_FACTS = {
     booking: 'Direct only at espadavilla.com (no third-party commission). All inquiries via the contact form at https://www.espadavilla.com/contact.',
   },
   rates: {
-    low: { usd: 2500, label: 'low', minNights: 3 },
+    low: { usd: 2500, label: 'low', minNights: 4 },
     peak: { usd: 4000, label: 'peak', minNights: 5 },
     holiday: { usd: 7500, usdMax: 8500, label: 'holiday', minNights: 7 },
-    note: 'Every nightly rate includes full staff, two golf carts, and club member guest-rate golf. Holiday/festive rates run $7,500–$8,500 by group size. Subject to 18% DR tax + service.',
+    note: 'Every nightly rate includes full staff, two golf carts, and club member guest-rate tee times at Punta Espada (Las Iguanas at regular rates). Holiday/festive rates run $7,500–$8,500 by group size. Food & beverage billed at cost + 15% service. No 18% DR government tax on the villa rental.',
   },
   golf: {
     puntaEspada:
@@ -123,10 +123,12 @@ const ALLOWED = {
   // Nightly rate figures that may legitimately appear next to "night/nightly"
   // (holiday is a $7,500–$8,500 range by group size).
   rates: new Set<number>([
-    CANONICAL_FACTS.rates.low.usd,
-    CANONICAL_FACTS.rates.peak.usd,
-    CANONICAL_FACTS.rates.holiday.usd,
-    CANONICAL_FACTS.rates.holiday.usdMax,
+    CANONICAL_FACTS.rates.low.usd,        // 2500 (6BR low)
+    CANONICAL_FACTS.rates.peak.usd,       // 4000 (6BR peak)
+    CANONICAL_FACTS.rates.holiday.usd,    // 7500 (6BR holiday)
+    CANONICAL_FACTS.rates.holiday.usdMax, // 8500 (8BR holiday)
+    3000, // 8BR low
+    4500, // 8BR peak
   ]),
 };
 
