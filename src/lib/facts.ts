@@ -133,7 +133,7 @@ const ALLOWED = {
   bedrooms: new Set<number>(CANONICAL_FACTS.villa.bedroomOptions),
   // Canonical is "9 full + 2 half baths (11 total)". Accept 11 (total) and the
   // common shorthand rounding to 9.5 (full + half-as-0.5), but NOT bare 9 or 10.
-  bathrooms: new Set<number>([CANONICAL_FACTS.villa.bathroomsTotal, 9.5]),
+  bathrooms: new Set<number>([CANONICAL_FACTS.villa.bathroomsTotal]),  // 11 only — 9.5 dropped (owner correction 2026-08-16)
   guests: new Set<number>([CANONICAL_FACTS.villa.maxGuests]),
   // Nightly rate figures that may legitimately appear next to "night/nightly"
   // (holiday is a $7,500–$8,500 range by group size).
@@ -162,12 +162,18 @@ export function checkVillaFacts(text: string): FactCheckVerdict {
     if (!ALLOWED.bathrooms.has(n)) violations.push(`claims ${n} bathrooms (canonical: 9 full + 2 half, 11 total)`);
   }
   // Occupancy: "up to <n> guests" / "sleeps <n>" / "<n> guests"
+  // 16 is the base-rate pricing threshold (guests 17–22 add $100/pp/night) — legit ONLY
+  // in explicit upcharge/base-rate context; a bare "sleeps 16" max-capacity claim is still wrong.
+  const UPCHARGE_CTX = /upcharge|per[\s-]?person|per[\s-]?head|above 16|base (?:nightly )?rate|covers up to 16|17\s*[–-]\s*22/;
   for (const m of t.matchAll(/(?:up to|sleeps|accommodates|for)\s+(\d{1,3})\s+(?:guests|people|players)/g)) {
     const n = Number(m[1]);
-    // Flag ANY max-occupancy figure that isn't the canonical 22 — including figures BELOW
-    // 22 (e.g. "sleeps 16"), since the 22-guest max applies to BOTH the 6- and 8-bedroom
-    // tiers via Murphy/pull-out beds. A lower number is as wrong as a higher one.
-    if (n !== CANONICAL_FACTS.villa.maxGuests) violations.push(`claims occupancy ${n} (canonical: up to ${CANONICAL_FACTS.villa.maxGuests}, applies to both bedroom tiers)`);
+    if (n === CANONICAL_FACTS.villa.maxGuests) continue;
+    const idx = m.index ?? 0;
+    const ctx = t.slice(Math.max(0, idx - 60), idx + m[0].length + 60);
+    if (n === 16 && UPCHARGE_CTX.test(ctx)) continue; // legit base-rate threshold, not a max-capacity claim
+    // Flag ANY other max-occupancy figure that isn't the canonical 22 — figures BELOW 22
+    // are as wrong as higher ones; the 22-guest max applies to BOTH bedroom tiers.
+    violations.push(`claims occupancy ${n} (canonical: up to ${CANONICAL_FACTS.villa.maxGuests}, applies to both bedroom tiers)`);
   }
   // Square footage: "<n,nnn> sq ft" / "square feet" / "square-foot"
   for (const m of t.matchAll(/([\d,]{3,7})\+?\s*(?:sq\.?\s?ft|square[\s-]?f(?:ee|oo)t)/g)) {

@@ -354,6 +354,7 @@ function buildSystemPrompt(memoryBlock: string): string {
     '# GROUNDING (HARD)',
     '- Villa facts: ONLY from the VILLA FACTS block above. Never invent or round a villa figure.',
     '- NEVER invent a nightly rate or per-person price. The ONLY nightly rates you may state — including in any "cost per person", "per night", or "villa math" example — are the canonical ones ($2,500 low / $4,000 peak / $7,500–$8,500 holiday). To show per-person cost, divide a CANONICAL rate by the group size; do NOT make up a number like $3,500.',
+    '- OCCUPANCY & UPCHARGE (HARD): The base nightly rate covers up to 16 guests; guests 17–22 add $100 per person, per night. NEVER claim there is "no per-person charge" (or "no per-head charge") for the 8th/17th/22nd guest or up to 22. When computing per-person cost for a group of 17–22, first add $100/night for each guest above 16, THEN divide — do not divide the bare base rate by the full group size.',
     '- Timely/external facts (tournament dates, tourism stats, rankings as of a date, weather, sargassum): you MUST run web_search and put each asserted fact in "sources" with its URL. Do NOT assert a date or statistic from memory.',
     '- If web_search cannot confirm a timely fact, write around it rather than guessing.',
     '- Schema downstream is BlogPosting + exactly one FAQPage. Do not reference VacationRental.',
