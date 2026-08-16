@@ -6,12 +6,15 @@
  * come from here — never the model's memory and never the live site (which has
  * drifted in the past; canonical wins).
  *
- * Source of truth: espadavilla.com/property-facts (reconciled 2026-06-09).
- * When that page changes, update this file to match and nothing else.
- * Reconciled 2026-06-09 (per Rob, matched to espadavilla.com/property-facts):
- *   bathrooms 9.5; peak $4,000; holiday $7,500–$8,500; coordinates + staff/included
- *   updated; pools = infinity + rooftop; contact now via wa.me/17347556357 (raw
- *   number removed from all high-harvest targets 2026-06-10, per privacy sweep).
+ * Source of truth: CANONICAL-FACTS.md (GOLFVILLA-WEBSITE project root), mirrored
+ * verbatim into this file. When CANONICAL-FACTS.md changes, update this file to
+ * match and nothing else.
+ * Reconciled 2026-08-16 (per HANDOVER-139, Rob-confirmed): bathrooms = 9 full +
+ *   2 half (11 total, not 9.5); pools = two swimming pools (ground-level regular +
+ *   rooftop INFINITY on the 2nd-level terrace) + 16-person hot tub — "infinity pool"
+ *   IS correct for the rooftop, not a third pool; rates note now carries the explicit
+ *   8BR tier ($3,000/$4,500/$8,500) and the 17–22 guest $100/pp/night upcharge;
+ *   contact via wa.me/17347556357 (raw number kept out of high-harvest targets).
  */
 
 export const CANONICAL_FACTS = {
@@ -22,7 +25,9 @@ export const CANONICAL_FACTS = {
     // NEVER assert "8 bedrooms" as the only configuration. Always note both options unless
     // the content is explicitly and only about one named tier.
     bedroomOptions: [6, 8] as const,
-    bathrooms: 9.5,
+    bathroomsFull: 9,
+    bathroomsHalf: 2,
+    bathroomsTotal: 11,
     // 22 is the max in EITHER bedroom configuration — Murphy/pull-out beds supply the extra
     // sleeping capacity regardless of tier. NEVER pair a guest-max below 22 with the
     // 6-bedroom tier (e.g. do not say "16 guests").
@@ -37,11 +42,12 @@ export const CANONICAL_FACTS = {
       'butler (also the dedicated villa manager)',
       'two maids (daily housekeeping)',
       'private transportation + airport transfers',
-      'two 6-person golf carts',
-      'club member guest-rate tee times at Punta Espada (Las Iguanas played at regular rates)',
+      'two complimentary 6-person golf carts (2 additional 6-person carts available to rent at $75/day per cart, up to 4 total)',
+      'the Punta Espada member-guest discounted rate — a reduced green fee exclusive to Villa Espada renters via the villa\'s private arrangement with the course (saves ~$200 per golfer per round vs published guest green fees; Punta Espada ONLY)',
+      'access to Las Iguanas, played at regular rates',
     ],
     notAllInclusive: 'NOT all-inclusive: full staff is included in the nightly rate, but food and groceries are billed at cost with no markup.',
-    pools: 'Infinity pool, rooftop pool, and a 16-person hot tub.',
+    pools: 'Two swimming pools — a ground-level regular pool and an infinity pool on the second-level (rooftop) terrace — plus a 16-person hot tub/jacuzzi. (The rooftop/terrace pool is an infinity pool.)',
     beaches: 'Private access to Eden Roc Beach Club and Juanillo Beach (~8 min by golf cart).',
     airport: '~20-minute private transfer from Punta Cana International Airport (PUJ).',
     policy: 'Check-in 3:00 PM / check-out 11:00 AM. No pets. Payment by credit card or USD wire.',
@@ -51,7 +57,7 @@ export const CANONICAL_FACTS = {
     low: { usd: 2500, label: 'low', minNights: 4 },
     peak: { usd: 4000, label: 'peak', minNights: 5 },
     holiday: { usd: 7500, usdMax: 8500, label: 'holiday', minNights: 7 },
-    note: 'Every nightly rate includes full staff, two golf carts, and club member guest-rate tee times at Punta Espada (Las Iguanas at regular rates). Holiday/festive rates run $7,500–$8,500 by group size. Food & beverage billed at cost + 15% service. No 18% DR government tax on the villa rental.',
+    note: 'Every nightly rate includes full staff, two golf carts, and the Punta Espada member-guest discounted rate (exclusive to Villa Espada renters via the villa\'s private arrangement; ~$200/golfer/round savings; Punta Espada only, Las Iguanas at regular rates). Holiday/festive rates run $7,500–$8,500 by group size (8-bedroom tier: $3,000 low / $4,500 peak / $8,500 holiday). No 18% DR government tax on the villa rental — not applicable. Base nightly rate covers up to 16 guests; guests 17–22 add $100 per person, per night. F&B billed separately at cost + 15% service.',
   },
   golf: {
     puntaEspada:
@@ -82,7 +88,7 @@ export function buildFactsPromptBlock(): string {
   return [
     '# VILLA FACTS — CANONICAL SOURCE OF TRUTH (the ONLY allowed source for villa facts)',
     `Property: ${f.villa.name} (${f.villa.aka.join(', ')}).`,
-    `Config: offered as EITHER a ${f.villa.bedroomOptions[0]}-bedroom OR ${f.villa.bedroomOptions[1]}-bedroom rental (guest's choice) — NEVER state "${f.villa.bedroomOptions[1]} bedrooms" as the only option. ${f.villa.bathrooms} bathrooms, up to ${f.villa.maxGuests} guests in EITHER configuration (never a lower guest-max for the ${f.villa.bedroomOptions[0]}-bedroom tier), ${f.villa.sqftMin.toLocaleString()}+ sq ft.`,
+    `Config: offered as EITHER a ${f.villa.bedroomOptions[0]}-bedroom OR ${f.villa.bedroomOptions[1]}-bedroom rental (guest's choice) — NEVER state "${f.villa.bedroomOptions[1]} bedrooms" as the only option. ${f.villa.bathroomsFull} full + ${f.villa.bathroomsHalf} half bathrooms (${f.villa.bathroomsTotal} total), up to ${f.villa.maxGuests} guests in EITHER configuration (never a lower guest-max for the ${f.villa.bedroomOptions[0]}-bedroom tier), ${f.villa.sqftMin.toLocaleString()}+ sq ft.`,
     `Location: ${f.villa.location}. ${f.villa.distinction}`,
     `Included every stay: ${f.villa.included.join('; ')}.`,
     `Important: ${f.villa.notAllInclusive}`,
@@ -125,8 +131,9 @@ const ALLOWED = {
   // Both bedroom tiers are legitimate (6 or 8) — never a bare "8 bedrooms" claim without
   // the 6-bedroom option also being acknowledged somewhere nearby is checked separately below.
   bedrooms: new Set<number>(CANONICAL_FACTS.villa.bedroomOptions),
-  // Canonical is "9.5 bathrooms"; accept 9.5 and the common rounding to 9.
-  bathrooms: new Set<number>([CANONICAL_FACTS.villa.bathrooms, 9]),
+  // Canonical is "9 full + 2 half baths (11 total)". Accept 11 (total) and the
+  // common shorthand rounding to 9.5 (full + half-as-0.5), but NOT bare 9 or 10.
+  bathrooms: new Set<number>([CANONICAL_FACTS.villa.bathroomsTotal, 9.5]),
   guests: new Set<number>([CANONICAL_FACTS.villa.maxGuests]),
   // Nightly rate figures that may legitimately appear next to "night/nightly"
   // (holiday is a $7,500–$8,500 range by group size).
@@ -152,7 +159,7 @@ export function checkVillaFacts(text: string): FactCheckVerdict {
   // Bathrooms: "<n> bathroom(s)" / "<n> bath(s)" / "<n>.5 bath"
   for (const m of t.matchAll(/(\d{1,2}(?:\.5)?)[\s-]?bath(?:room)?/g)) {
     const n = Number(m[1]);
-    if (!ALLOWED.bathrooms.has(n)) violations.push(`claims ${n} bathrooms (canonical: 9.5)`);
+    if (!ALLOWED.bathrooms.has(n)) violations.push(`claims ${n} bathrooms (canonical: 9 full + 2 half, 11 total)`);
   }
   // Occupancy: "up to <n> guests" / "sleeps <n>" / "<n> guests"
   for (const m of t.matchAll(/(?:up to|sleeps|accommodates|for)\s+(\d{1,3})\s+(?:guests|people|players)/g)) {
