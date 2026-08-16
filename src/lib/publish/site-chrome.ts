@@ -84,7 +84,7 @@ export function siteFooter(): string {
   return `<footer class="site-footer">
   <div class="container">
     <div class="footer-grid">
-      <div class="footer-brand"><span class="logo-top">Villa Espada</span><span class="logo-sub">Cap Cana · Dominican Republic</span><p>8-bedroom luxury villa on Fairway 5 of Punta Espada Golf Course. Full staff. Member rates. Two golf carts.</p></div>
+      <div class="footer-brand"><span class="logo-top">Villa Espada</span><span class="logo-sub">Cap Cana · Dominican Republic</span><p>6- or 8-bedroom luxury villa on Fairway 5 of Punta Espada Golf Course. Full staff. Member-guest discounted rate. Two golf carts.</p></div>
       <div class="footer-col"><h4>Villa</h4><ul><li><a href="/villa">The Villa</a></li><li><a href="/golf">Golf</a></li><li><a href="/amenities">Amenities</a></li></ul></div>
       <div class="footer-col"><h4>Book</h4><ul><li><a href="/rates">Rates</a></li><li><a href="/contact">Contact</a></li><li><a href="/faq">FAQ</a></li><li><a href="/property-facts">Property Facts</a></li></ul></div>
       <div class="footer-col"><h4>Contact</h4><ul><li><a href="/contact">Contact Us</a></li></ul></div>
