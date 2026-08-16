@@ -18,8 +18,14 @@ export const CANONICAL_FACTS = {
   villa: {
     name: 'Villa Espada',
     aka: ['Villa Espada Cap Cana'],
-    bedrooms: 8,
+    // Offered as EITHER a 6-bedroom OR 8-bedroom rental (guest's choice, two pricing tiers).
+    // NEVER assert "8 bedrooms" as the only configuration. Always note both options unless
+    // the content is explicitly and only about one named tier.
+    bedroomOptions: [6, 8] as const,
     bathrooms: 9.5,
+    // 22 is the max in EITHER bedroom configuration — Murphy/pull-out beds supply the extra
+    // sleeping capacity regardless of tier. NEVER pair a guest-max below 22 with the
+    // 6-bedroom tier (e.g. do not say "16 guests").
     maxGuests: 22,
     sqftMin: 15000, // "15,000+ sq ft"
     location: 'Fairway 5, Punta Espada Golf Course, Cap Cana, Dominican Republic',
@@ -57,7 +63,7 @@ export const CANONICAL_FACTS = {
       'Nearby: Corales (Tom Fazio, PGA Tour Corales Puntacana Championship), La Cana (P.B. Dye, 27 holes), Teeth of the Dog (Pete Dye, Casa de Campo, ~1 hr west).',
   },
   entities: {
-    villaEspada: 'the 8-bedroom private rental villa (NOT a hotel or resort)',
+    villaEspada: 'the private rental villa, offered as EITHER a 6-bedroom OR 8-bedroom configuration (guest\'s choice), sleeping up to 22 guests in either configuration (NOT a hotel or resort)',
     puntaEspada: 'the Jack Nicklaus Signature course the villa sits on (Fairway 5)',
     lasIguanas: "Cap Cana's second Jack Nicklaus Signature course, ~3 min by golf cart",
     capCana: 'the ~30,000-acre gated luxury resort community containing both courses',
@@ -76,7 +82,7 @@ export function buildFactsPromptBlock(): string {
   return [
     '# VILLA FACTS — CANONICAL SOURCE OF TRUTH (the ONLY allowed source for villa facts)',
     `Property: ${f.villa.name} (${f.villa.aka.join(', ')}).`,
-    `Config: ${f.villa.bedrooms} en-suite bedrooms, ${f.villa.bathrooms} bathrooms, up to ${f.villa.maxGuests} guests, ${f.villa.sqftMin.toLocaleString()}+ sq ft.`,
+    `Config: offered as EITHER a ${f.villa.bedroomOptions[0]}-bedroom OR ${f.villa.bedroomOptions[1]}-bedroom rental (guest's choice) — NEVER state "${f.villa.bedroomOptions[1]} bedrooms" as the only option. ${f.villa.bathrooms} bathrooms, up to ${f.villa.maxGuests} guests in EITHER configuration (never a lower guest-max for the ${f.villa.bedroomOptions[0]}-bedroom tier), ${f.villa.sqftMin.toLocaleString()}+ sq ft.`,
     `Location: ${f.villa.location}. ${f.villa.distinction}`,
     `Included every stay: ${f.villa.included.join('; ')}.`,
     `Important: ${f.villa.notAllInclusive}`,
@@ -116,7 +122,9 @@ export function buildFactsPromptBlock(): string {
 export type FactCheckVerdict = { flagged: boolean; reason: string | null };
 
 const ALLOWED = {
-  bedrooms: new Set<number>([CANONICAL_FACTS.villa.bedrooms]),
+  // Both bedroom tiers are legitimate (6 or 8) — never a bare "8 bedrooms" claim without
+  // the 6-bedroom option also being acknowledged somewhere nearby is checked separately below.
+  bedrooms: new Set<number>(CANONICAL_FACTS.villa.bedroomOptions),
   // Canonical is "9.5 bathrooms"; accept 9.5 and the common rounding to 9.
   bathrooms: new Set<number>([CANONICAL_FACTS.villa.bathrooms, 9]),
   guests: new Set<number>([CANONICAL_FACTS.villa.maxGuests]),
@@ -139,7 +147,7 @@ export function checkVillaFacts(text: string): FactCheckVerdict {
   // Bedrooms: "<n> bedroom(s)" / "<n>-bedroom"
   for (const m of t.matchAll(/(\d{1,2})[\s-]?bedroom/g)) {
     const n = Number(m[1]);
-    if (!ALLOWED.bedrooms.has(n)) violations.push(`claims ${n} bedrooms (canonical: ${CANONICAL_FACTS.villa.bedrooms})`);
+    if (!ALLOWED.bedrooms.has(n)) violations.push(`claims ${n} bedrooms (canonical: ${CANONICAL_FACTS.villa.bedroomOptions.join(' or ')})`);
   }
   // Bathrooms: "<n> bathroom(s)" / "<n> bath(s)" / "<n>.5 bath"
   for (const m of t.matchAll(/(\d{1,2}(?:\.5)?)[\s-]?bath(?:room)?/g)) {
@@ -149,8 +157,10 @@ export function checkVillaFacts(text: string): FactCheckVerdict {
   // Occupancy: "up to <n> guests" / "sleeps <n>" / "<n> guests"
   for (const m of t.matchAll(/(?:up to|sleeps|accommodates|for)\s+(\d{1,3})\s+(?:guests|people|players)/g)) {
     const n = Number(m[1]);
-    // Only flag if it's clearly a max-occupancy claim above the canonical max.
-    if (n > CANONICAL_FACTS.villa.maxGuests) violations.push(`claims occupancy ${n} (canonical max: ${CANONICAL_FACTS.villa.maxGuests})`);
+    // Flag ANY max-occupancy figure that isn't the canonical 22 — including figures BELOW
+    // 22 (e.g. "sleeps 16"), since the 22-guest max applies to BOTH the 6- and 8-bedroom
+    // tiers via Murphy/pull-out beds. A lower number is as wrong as a higher one.
+    if (n !== CANONICAL_FACTS.villa.maxGuests) violations.push(`claims occupancy ${n} (canonical: up to ${CANONICAL_FACTS.villa.maxGuests}, applies to both bedroom tiers)`);
   }
   // Square footage: "<n,nnn> sq ft" / "square feet" / "square-foot"
   for (const m of t.matchAll(/([\d,]{3,7})\+?\s*(?:sq\.?\s?ft|square[\s-]?f(?:ee|oo)t)/g)) {
