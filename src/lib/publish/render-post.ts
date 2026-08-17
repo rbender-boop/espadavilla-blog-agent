@@ -51,7 +51,8 @@ export function renderPostHtml(input: RenderInput): string {
   const summary = stripCitations(input.summary ?? '');
   // De-duplicate sources by URL; keep only well-formed http(s) links.
   const sources = dedupeSources(input.sources ?? []);
-  const bodyHtml = markdownToHtml(body);
+  const bodyHtml = addHeadingIds(markdownToHtml(body));
+  const tocHtml = buildToc(body);
   const faqHtml = renderFaqHtml(faq);
   // Per-post hero image (cluster-mapped). Falls back to the legacy single hero
   // only when no image is supplied, so older callers keep working.
@@ -179,6 +180,12 @@ ${jsonLd}
     .post-sources h2 { font-size: 1.2rem; margin: 0 0 12px; }
     .post-sources ul { line-height: 1.7; margin: 0; padding-left: 1.2em; font-size: 0.9rem; word-break: break-word; }
     .post-sources a { color: var(--gold, #C9A84C); }
+    .post-toc { margin: 0 0 40px; padding: 20px 24px; background: rgba(0,0,0,0.03); border-left: 3px solid var(--gold, #C9A84C); border-radius: 4px; }
+    .post-toc-label { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted, #888); margin: 0 0 10px; }
+    .post-toc ol { margin: 0; padding-left: 1.2em; }
+    .post-toc li { line-height: 1.8; font-size: 0.95rem; }
+    .post-toc a { color: var(--navy); text-decoration: none; }
+    .post-toc a:hover { color: var(--gold, #C9A84C); }
   </style>
 </head>
 <body>
@@ -199,6 +206,7 @@ ${mobileMenu()}
   <p class="post-meta">Villa Espada · Published ${escapeHtml(formatHumanDate(input.publishedISO))}</p>
 ${input.image ? `\n  <img class="post-hero" src="${heroImage.url}" alt="${escapeHtml(heroImage.alt)}"${heroImage.width > 0 ? ` width="${heroImage.width}" height="${heroImage.height}"` : ''} loading="eager">\n` : ''}
 ${summary ? `\n  <div class="post-summary"><p>${escapeHtml(summary)}</p></div>\n` : ''}
+${tocHtml ? `\n${indent(tocHtml, 2)}\n` : ''}
 ${indent(bodyHtml, 2)}
 ${faqHtml ? `\n  <section class="post-faq">\n    <h2>Frequently Asked Questions</h2>\n${indent(faqHtml, 4)}\n  </section>\n` : ''}
 ${sources.length ? `\n  <section class="post-sources">\n    <h2>Sources</h2>\n    <ul>\n${sources.map((s) => `      <li>${renderSourceItem(s)}</li>`).join('\n')}\n    </ul>\n  </section>\n` : ''}
@@ -291,6 +299,45 @@ function renderSourceItem(s: { claim: string; url: string }): string {
 
 function hostnameOf(url: string): string {
   try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return ''; }
+}
+
+/* ============================================================
+ * Table of Contents
+ * ============================================================
+ * Extracts H2 headings from body_markdown and renders a <nav> TOC block.
+ * Only generated when the post has 3+ H2s (shorter posts don't benefit).
+ * H3s are intentionally excluded to keep the TOC scannable.
+ */
+
+export function buildToc(markdown: string): string {
+  const h2s: Array<{ text: string; id: string }> = [];
+  for (const line of markdown.split('\n')) {
+    const m = /^##\s+(.+)$/.exec(line.trim());
+    if (m) {
+      const text = m[1]!.trim();
+      const id = text
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '-');
+      h2s.push({ text, id });
+    }
+  }
+  if (h2s.length < 3) return '';
+  const items = h2s.map((h) => `    <li><a href="#${h.id}">${escapeHtml(h.text)}</a></li>`).join('\n');
+  return `<nav class="post-toc" aria-label="Table of contents">\n  <p class="post-toc-label">In this article</p>\n  <ol>\n${items}\n  </ol>\n</nav>`;
+}
+
+/* Add id attributes to H2 elements so TOC anchor links resolve */
+function addHeadingIds(html: string): string {
+  return html.replace(/<h2>([^<]+)<\/h2>/g, (_m, text: string) => {
+    const id = text
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-');
+    return `<h2 id="${id}">${text}</h2>`;
+  });
 }
 
 /* ============================================================
