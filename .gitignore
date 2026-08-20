@@ -22,3 +22,5 @@ Thumbs.db
 *-search-console-*.json
 gcp-*.json
 *.serviceaccount.json
+
+aeo_raw_*.jsonl

@@ -20,10 +20,12 @@ STEPS:
    If a drafting job is still running (drafting started only 30 min ago), say so, wait ~15 minutes, then re-check the view once.
 2. If nothing is pending AND step 6 shows no failures: message Rob "All clear — no drafts pending, no failures this week." and stop.
 3. For each pending draft show: id, topic_title, cluster, meta_title, word_count, then the full body (edited_content if not null — it takes priority — else body_markdown). If risk_score >= 1.0, put a "⚠️ FLAGGED" banner with block_reason above it.
-4. Give a recommendation (APPROVE / EDIT / REJECT) with evidence. Default is REJECT unless ALL THREE pass:
+4. Give a recommendation (APPROVE / EDIT / REJECT / REJECT+REFRESH) with evidence. Default is REJECT unless ALL of these pass (v3, charter-aligned 2026-08-20):
    a. Net-new intent — no published post or core page already covers it. Check: select slug, meta_title, cluster from blog_post_drafts where status='published';
    b. Real demand or AEO gap — GSC (Windsor.ai connector, google_search_console, site espadavilla.com) shows impressions/queries for the target intent, OR the post is answer-shaped content targeting the known ChatGPT/Gemini citation gap.
    c. No cannibalization — zero overlap with the protected golf winner pages or golfvilla's generic-golf lane.
+   d. Fit — Villa Espada SHOULD or COULD genuinely win this query (honest product fit; never optimize for intents the villa can't truly satisfy, e.g. "oceanfront villa").
+   e. Refresh-over-create — if the intent could instead strengthen an EXISTING published post or site page, recommend REJECT+REFRESH: reject the draft and name the exact existing URL to refresh/expand. PRESERVE > UPDATE > EXPAND > CREATE.
    Also run an AI-slop check: formulaic transitions, "Whether you're...", rule-of-three overuse, em-dash spam, generic conclusions, stale or unverifiable facts (dates/prices in the past). If found, propose humanized replacement text via edit_post.
 5. Act ONLY through these RPCs after Rob answers (never UPDATE tables directly):
    approve as-is: select approve_post('<id>');  |  edit & approve: select edit_post('<id>', '<full new text>');  |  reject: select reject_post('<id>', '<short reason>');

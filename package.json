@@ -15,7 +15,8 @@
     "gsc:topics": "tsx scripts/gsc-topics-local.ts",
     "refresh:check": "tsx scripts/refresh-check.ts",
     "verify:offline": "tsx scripts/verify-offline.ts",
-    "smoke": "tsx scripts/verify-offline.ts"
+    "smoke": "tsx scripts/verify-offline.ts",
+    "aeo:probe": "tsx scripts/aeo-probe.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.98.0",
