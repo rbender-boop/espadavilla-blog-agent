@@ -1,4 +1,4 @@
-COWORK SCHEDULED-TASK PROMPT v4 — "Espadavilla Blog Editorial" (2026-08-20)
+COWORK SCHEDULED-TASK PROMPT v4 — "Blog Editorial (Espadavilla + Golfvilla)" (2026-08-20)
 Live task: trig_0179EPTYJGfRj4fyDxfhzc9d — Thursdays 14:30 UTC (10:30am EDT),
 push + email notifications ON, cloud-run (no local device). v4 extends v2/v3:
 the SAME editorial loop now runs TWICE — espadavilla first, then golfvilla —
