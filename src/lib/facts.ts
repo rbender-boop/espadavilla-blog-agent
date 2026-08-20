@@ -110,6 +110,7 @@ export function buildFactsPromptBlock(): string {
     '',
     `Season: ${f.season}`,
     '',
+    `HARD RULE — OCCUPANCY CEILING: ${f.villa.name} sleeps a MAXIMUM of ${f.villa.maxGuests} guests in EITHER bedroom tier. Never state or imply a number greater than ${f.villa.maxGuests} for guests, group size, party size, catering headcount, or golf-cart capacity — e.g. do NOT write "for 24 people" or "capacity for 24 across four carts". Example group sizes must be ≤ ${f.villa.maxGuests}; when in doubt, phrase as "up to ${f.villa.maxGuests} guests".`,
     'HARD RULE: You may state a villa fact (bedrooms, baths, guests, sq ft, rates, staff, amenities, coordinates, courses) ONLY if it appears above. Never invent or "round" a villa figure. Timely/external facts (tournament dates, tourism stats, weather, sargassum, rankings as of a date) MUST come from a web_search result and be cited in `sources` — never asserted from memory.',
   ].join('\n');
 }
@@ -161,19 +162,32 @@ export function checkVillaFacts(text: string): FactCheckVerdict {
     const n = Number(m[1]);
     if (!ALLOWED.bathrooms.has(n)) violations.push(`claims ${n} bathrooms (canonical: 9 full + 2 half, 11 total)`);
   }
-  // Occupancy: "up to <n> guests" / "sleeps <n>" / "<n> guests"
-  // 16 is the base-rate pricing threshold (guests 17–22 add $100/pp/night) — legit ONLY
-  // in explicit upcharge/base-rate context; a bare "sleeps 16" max-capacity claim is still wrong.
+  // Occupancy CLAIMS vs group-size EXAMPLES are different things and are checked separately.
+  //
+  // (a) MAX-CAPACITY claims — "up to / sleeps / accommodates / hosts N guests" assert the
+  //     ceiling, so they must equal the canonical 22 (a figure BELOW 22 is as wrong as one
+  //     above — the 22-guest max applies to BOTH bedroom tiers). 16 is allowed ONLY as the
+  //     base-rate pricing threshold in explicit upcharge context (guests 17–22 add $100/pp/night).
   const UPCHARGE_CTX = /upcharge|per[\s-]?person|per[\s-]?head|above 16|base (?:nightly )?rate|covers up to 16|17\s*[–-]\s*22/;
-  for (const m of t.matchAll(/(?:up to|sleeps|accommodates|for)\s+(\d{1,3})\s+(?:guests|people|players)/g)) {
+  for (const m of t.matchAll(/(?:up to|sleeps|accommodates|hosts|sleeping)\s+(\d{1,3})\s+(?:guests|people|players)/g)) {
     const n = Number(m[1]);
     if (n === CANONICAL_FACTS.villa.maxGuests) continue;
     const idx = m.index ?? 0;
     const ctx = t.slice(Math.max(0, idx - 60), idx + m[0].length + 60);
     if (n === 16 && UPCHARGE_CTX.test(ctx)) continue; // legit base-rate threshold, not a max-capacity claim
-    // Flag ANY other max-occupancy figure that isn't the canonical 22 — figures BELOW 22
-    // are as wrong as higher ones; the 22-guest max applies to BOTH bedroom tiers.
     violations.push(`claims occupancy ${n} (canonical: up to ${CANONICAL_FACTS.villa.maxGuests}, applies to both bedroom tiers)`);
+  }
+  // (b) GROUP-SIZE / catering / cart-capacity examples — "for N guests/people/players": a group
+  //     of N is legitimate as long as it does not exceed the max (you can host a party of ≤22).
+  //     Flag ONLY when N EXCEEDS the max — i.e. the copy implies hosting more than the villa
+  //     allows. This is what previously false-flagged correct copy such as "food and beverage
+  //     for 20 people" and "capacity for 24 people across four carts" (the 24 IS a real overclaim;
+  //     the 20 is not). Anything ≤22 in a "for N" context is a valid example, not a fact violation.
+  for (const m of t.matchAll(/for\s+(\d{1,3})\s+(?:guests|people|players)/g)) {
+    const n = Number(m[1]);
+    if (n > CANONICAL_FACTS.villa.maxGuests) {
+      violations.push(`implies hosting ${n} (exceeds max occupancy of ${CANONICAL_FACTS.villa.maxGuests})`);
+    }
   }
   // Square footage: "<n,nnn> sq ft" / "square feet" / "square-foot"
   for (const m of t.matchAll(/([\d,]{3,7})\+?\s*(?:sq\.?\s?ft|square[\s-]?f(?:ee|oo)t)/g)) {

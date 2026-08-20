@@ -66,10 +66,15 @@ this is the authoritative record of what changed.
 - Uncommitted facts.ts changes (both repos) + the H2 smoke ✗ — review & decide.
 - AEO probe re-run ~Sept 16 (post-profile diff) per HANDOVER-2026-08-19.
 
-## Push commands (PowerShell, one per line)
+## Push commands (PowerShell, one per line) — Rob approved including facts.ts in both repos
 cd 'C:\Users\rbend\Desktop\Claude Projects\espadavilla-blog-agent'
-git add vercel.json src/lib/unipile.ts src/lib/drafting/pipeline.ts src/lib/jobs/run-worker.ts src/lib/gsc/topic-select.ts docs/cowork-approval-prompt.md docs/HANDOVER-EDITORIAL-RESTART-2026-08-20.md
-git commit -m "feat: Thu-only cadence, retire WhatsApp alerting (kill switch), semantic topic dedup, Cowork editorial task v2"
+git add vercel.json src/lib/unipile.ts src/lib/drafting/pipeline.ts src/lib/jobs/run-worker.ts src/lib/gsc/topic-select.ts src/lib/facts.ts docs/cowork-approval-prompt.md docs/HANDOVER-EDITORIAL-RESTART-2026-08-20.md
+git commit -m "feat: Thu-only cadence, retire WhatsApp alerting (kill switch), semantic topic dedup, occupancy-guard fix, Cowork editorial task v2"
 git pull --rebase origin main
 git push origin main
-# (facts.ts intentionally NOT staged — review it first, commit separately if you approve it)
+
+cd 'C:\Users\rbend\Desktop\Claude Projects\golfvilla-blog-agent'
+git add src/lib/facts.ts
+git commit -m "fix(facts): occupancy guard — separate max-capacity claims from group-size examples (flag only >22)"
+git pull --rebase origin main
+git push origin main
