@@ -93,7 +93,26 @@ function singular(w: string): string {
   return w;
 }
 
-/** Order- and plurality-insensitive intent key for a query or title. */
+/**
+ * Synonym canonicalization (2026-08-20) — the fingerprint was purely lexical,
+ * so "shuttle" / "transfer" / "transportation" minted three topics for ONE
+ * intent (the exact miss that queued 4 near-identical golf-transport topics).
+ * Each token is mapped to a canonical form AFTER singularization. Keep groups
+ * tight and unambiguous — every entry merges more topics.
+ */
+const TOKEN_SYNONYMS: Record<string, string> = {
+  // ground-transport intent
+  shuttle: 'transport',
+  transfer: 'transport',
+  transportation: 'transport',
+  // lodging-cost intent
+  price: 'cost',
+  pricing: 'cost',
+  rate: 'cost',
+  fee: 'cost',
+};
+
+/** Order-, plurality-, and synonym-insensitive intent key for a query or title. */
 export function topicFingerprint(s: string): string {
   return fingerprintTokens(s).join(' ');
 }
@@ -103,6 +122,7 @@ function fingerprintTokens(s: string): string[] {
     .split(' ')
     .filter((w) => w && !FP_STOPWORDS.has(w))
     .map(singular)
+    .map((w) => TOKEN_SYNONYMS[w] ?? w)
     .sort();
 }
 

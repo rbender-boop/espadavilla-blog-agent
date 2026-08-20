@@ -33,8 +33,6 @@ import { resolveMoneyLinks } from '../links';
 import { analyzeIntentOverlap } from './overlap';
 import type { OverlapResult } from './overlap-score';
 import { humanizeBody } from './humanize';
-import { sendDraftForApproval } from '../whatsapp/send-draft';
-import { sendWhatsAppToOwner } from '../unipile';
 import type { JobRow, JobStep } from '../jobs/job-store';
 
 export type StepResult =
@@ -326,24 +324,13 @@ async function notifyStep(job: JobRow): Promise<StepResult> {
   const draftId = job.draft_id ?? (job.state.draftId as string);
   const flagged = !!job.state.flagged;
 
-  // Clean AND flagged drafts both go through the SAME approve/reject/edit flow so
-  // Rob can always act on them. Flagged drafts carry a ⚠️ warning + the block
-  // reason (see formatDraftMessage) so he reviews before approving — instead of
-  // being stranded in 'pending' with no approval row and no way to reply or edit.
-  // Idempotent: sendDraftForApproval requires status 'pending', so a re-run after
-  // a successful send is a no-op (the draft is already 'sent_for_approval').
+  // Approvals live in Cowork now (weekly "Espadavilla Blog Editorial" scheduled
+  // task reading v_pending_approvals) — the WhatsApp/Unipile send is retired
+  // (2026-08-20). Drafts simply rest at status='pending'; the view covers them.
+  // Flagged drafts surface their ⚠️ block_reason through the view the same way.
   const { data: draft } = await supabase.from('blog_post_drafts').select('status').eq('id', draftId).maybeSingle();
-  if (draft?.status === 'pending') {
-    await sendDraftForApproval(draftId);
-    return { kind: 'done', state: { drafted: true, sent: true, flagged, draft_id: draftId } };
-  }
-  return { kind: 'done', state: { drafted: true, sent: draft?.status === 'sent_for_approval', flagged, draft_id: draftId, note: `draft status=${draft?.status ?? 'missing'}` } };
+  return { kind: 'done', state: { drafted: true, sent: false, flagged, draft_id: draftId, note: `awaiting Cowork approval (status=${draft?.status ?? 'missing'})` } };
 }
-
-async function safelyNotify(message: string): Promise<void> {
-  try { await sendWhatsAppToOwner(message); } catch (err) { console.error('[pipeline] notify failed:', err); }
-}
-void safelyNotify; // retained for ad-hoc operator notices; not on the happy path
 
 /* ============================================================
  * Research tool + prompts

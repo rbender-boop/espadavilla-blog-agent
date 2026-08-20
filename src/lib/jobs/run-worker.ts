@@ -9,7 +9,6 @@
  */
 
 import { supabase } from '../supabase';
-import { sendWhatsAppToOwner } from '../unipile';
 import { runStep, HEAVY_STEPS } from '../drafting/pipeline';
 import {
   claimNextJob,
@@ -144,11 +143,8 @@ async function finishRun(
 }
 
 async function notifyOwnerOfFailure(job: JobRow, error: string): Promise<void> {
-  try {
-    await sendWhatsAppToOwner(
-      [`⚠️ Blog pipeline failed`, `Job ${job.id} gave up at step "${job.step}" after ${job.max_attempts} attempts.`, `Error: ${error}`].join('\n'),
-    );
-  } catch (err) {
-    console.error('[worker] failure-notify failed:', err);
-  }
+  // WhatsApp/Unipile alerting retired 2026-08-20. Failures land in
+  // blog_agent_runs (status='failure') and are surfaced to Rob by the weekly
+  // "Espadavilla Blog Editorial" Cowork scheduled task's failure report.
+  console.error(`[worker] job ${job.id} gave up at step "${job.step}" after ${job.max_attempts} attempts: ${error}`);
 }

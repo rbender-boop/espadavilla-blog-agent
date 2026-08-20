@@ -55,6 +55,17 @@ export type SendMessageResult = {
 };
 
 export async function sendWhatsAppToOwner(message: string): Promise<SendMessageResult> {
+  // WHATSAPP SENDING DISABLED (2026-08-20) — mirrors golfvilla's 2026-08-17
+  // kill switch. The Unipile WhatsApp account is disconnected (401) and the
+  // channel is retired for TOS reasons. Approvals + failure reporting now go
+  // through the "Espadavilla Blog Editorial" Cowork scheduled task (weekly,
+  // reads v_pending_approvals + blog_agent_runs). Every call site in this repo
+  // routes through this one function, so short-circuiting here is a single,
+  // complete kill switch. Do not re-enable without Rob's explicit go-ahead.
+  console.warn('[unipile] sendWhatsAppToOwner suppressed (WhatsApp disabled 2026-08-20):', message.slice(0, 120));
+  return { id: 'whatsapp-disabled' };
+
+  /* --- original implementation, kept for reference / future restore ---
   const accountId = env('UNIPILE_WHATSAPP_ACCOUNT_ID');
   const ownerNumber = env('UNIPILE_WHATSAPP_OWNER_NUMBER');
 
@@ -66,6 +77,7 @@ export async function sendWhatsAppToOwner(message: string): Promise<SendMessageR
     attendees_ids: [attendeeId],
     text: message,
   });
+  --- */
 }
 
 // =========================================
