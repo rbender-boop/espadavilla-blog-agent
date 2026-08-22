@@ -46,7 +46,7 @@ export const CANONICAL_FACTS = {
       'the Punta Espada member-guest discounted rate — a reduced green fee exclusive to Villa Espada renters via the villa\'s private arrangement with the course (saves ~$200 per golfer per round vs published guest green fees; Punta Espada ONLY)',
       'access to Las Iguanas, played at regular rates',
     ],
-    notAllInclusive: 'NOT all-inclusive: full staff is included in the nightly rate, but food and groceries are billed at cost with no markup.',
+    notAllInclusive: 'NOT all-inclusive: full staff is included in the nightly rate, but food and groceries are billed at cost plus a 15% service charge, with no restaurant markup.',
     pools: 'Two swimming pools — a ground-level regular pool and an infinity pool on the second-level (rooftop) terrace — plus a 16-person hot tub/jacuzzi. (The rooftop/terrace pool is an infinity pool.)',
     beaches: 'Private access to Eden Roc Beach Club and Juanillo Beach (~8 min by golf cart).',
     airport: '~20-minute private transfer from Punta Cana International Airport (PUJ).',
@@ -210,6 +210,28 @@ export function checkVillaFacts(text: string): FactCheckVerdict {
     const ctx = t.slice(Math.max(0, idx - 60), idx + m[0].length + 60);
     if (COMPARISON_CTX.test(ctx)) continue; // competitor/market price, not a villa-rate claim
     violations.push(`claims nightly rate $${n.toLocaleString()} (canonical: $${CANONICAL_FACTS.rates.low.usd.toLocaleString()} low / $${CANONICAL_FACTS.rates.peak.usd.toLocaleString()} peak / $${CANONICAL_FACTS.rates.holiday.usd.toLocaleString()}–$${CANONICAL_FACTS.rates.holiday.usdMax.toLocaleString()} holiday)`);
+  }
+
+  // Food-billing canonical check (added 2026-08-22):
+  // Canonical: "at cost plus a 15% service charge, with no restaurant markup"
+  // These banned phrases indicate the old wrong wording crept back in.
+  const BAD_FOOD_PHRASES = [
+    'at cost with no markup',
+    'at cost with zero markup',
+    'at cost, no markup',
+    'at cost (no markup)',
+    'no markup, no mystery charges',
+    'all meals at cost, no markup',
+    'purchased at cost with no markup',
+  ];
+  for (const phrase of BAD_FOOD_PHRASES) {
+    if (t.includes(phrase)) {
+      violations.push(`banned food-billing phrase "${phrase}" — use "at cost plus a 15% service charge, with no restaurant markup" instead`);
+    }
+  }
+  // Also catch bare "food billed at cost" or "billed at cost" (food context) without the 15%
+  if (/(?:food|groceries|f&b|meals|beverage)[\w\s,]+billed at cost(?! plus a 15)/.test(t)) {
+    violations.push('food billed at cost without 15% service charge — use canonical phrasing');
   }
 
   if (violations.length === 0) return { flagged: false, reason: null };
