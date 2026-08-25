@@ -91,8 +91,13 @@ export function renderPostHtml(input: RenderInput): string {
     '@type': 'Person',
     '@id': `${SITE_ORIGIN}/#person-rb`,
     name: 'Robert Bender',
-    url: SITE_ORIGIN,
+    url: `${SITE_ORIGIN}/about`,
+    jobTitle: 'Owner of Villa Espada; Founder & Managing Partner, Fortis Net Lease',
     worksFor: { '@id': `${SITE_ORIGIN}/#organization` },
+    sameAs: [
+      'https://www.linkedin.com/in/robert-bender-3b86b24a/',
+      'https://fortisnetlease.com/',
+    ],
   };
   const orgNode = {
     '@type': 'Organization',

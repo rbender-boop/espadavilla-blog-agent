@@ -65,7 +65,7 @@ check('render: markdown bold → strong', html.includes('<strong>on-course priva
 check('render: internal link rendered', html.includes('href="/cap-cana-golf-villa"'));
 check('render: external villa link rendered', html.includes('href="https://www.espadavilla.com"'));
 check('render: list rendered', html.includes('<ul>') && html.includes('<li>Punta Espada: ranked #1 in the Caribbean</li>'));
-check('render: H2 from ## ', html.includes('<h2>The courses</h2>'));
+check('render: H2 from ## ', html.includes('<h2 id="the-courses">The courses</h2>'));
 check('render: FAQ question rendered', html.includes('What golf courses can you play from a Cap Cana villa?'));
 
 // 2. Sitemap insert against the REAL live sitemap

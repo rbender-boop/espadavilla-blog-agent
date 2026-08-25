@@ -50,7 +50,7 @@ export const CANONICAL_FACTS = {
     pools: 'Two swimming pools — a ground-level regular pool and an infinity pool on the second-level (rooftop) terrace — plus a 16-person hot tub/jacuzzi. (The rooftop/terrace pool is an infinity pool.)',
     beaches: 'Private access to Eden Roc Beach Club and Juanillo Beach (~8 min by golf cart).',
     airport: '~20-minute private transfer from Punta Cana International Airport (PUJ).',
-    policy: 'Check-in 3:00 PM / check-out 11:00 AM. No pets. Payment by credit card or USD wire.',
+    policy: 'Check-in 3:00 PM / check-out 11:00 AM. Dogs are welcome. Payment by credit card or USD wire.',
     booking: 'Direct only at espadavilla.com (no third-party commission). All inquiries via the contact form at https://www.espadavilla.com/contact.',
   },
   rates: {
