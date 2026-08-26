@@ -38,10 +38,10 @@ const SAMPLE = {
     'Picking between Cap Cana and Casa de Campo comes down to one question: do you want **on-course privacy** or a sprawling resort?',
     '',
     '## The courses',
-    'Cap Cana gives you 36 holes of Jack Nicklaus Signature golf — [Punta Espada](/cap-cana-golf-villa) and Las Iguanas — without leaving the gates.',
+    'Cap Cana gives you two Jack Nicklaus Signature courses — [Punta Espada](/cap-cana-golf-villa) and Las Iguanas — without leaving the gates.',
     '',
-    '- Punta Espada: ranked #1 in the Caribbean',
-    '- Las Iguanas: three oceanside holes',
+    '- Punta Espada: ranked #1 in the Caribbean and Mexico by GolfWeek for eight consecutive years',
+    '- Las Iguanas: front nine open now (full 18 by end 2026)',
     '',
     '## Where a group sleeps',
     'A private villa beats a block of hotel rooms for a group. Book direct at [Villa Espada](https://www.espadavilla.com).',
@@ -64,7 +64,7 @@ check('render: no VacationRental schema', !html.includes('VacationRental'));
 check('render: markdown bold → strong', html.includes('<strong>on-course privacy</strong>'));
 check('render: internal link rendered', html.includes('href="/cap-cana-golf-villa"'));
 check('render: external villa link rendered', html.includes('href="https://www.espadavilla.com"'));
-check('render: list rendered', html.includes('<ul>') && html.includes('<li>Punta Espada: ranked #1 in the Caribbean</li>'));
+check('render: list rendered', html.includes('<ul>') && html.includes('<li>Punta Espada: ranked #1 in the Caribbean and Mexico by GolfWeek for eight consecutive years</li>'));
 check('render: H2 from ## ', html.includes('<h2 id="the-courses">The courses</h2>'));
 check('render: FAQ question rendered', html.includes('What golf courses can you play from a Cap Cana villa?'));
 

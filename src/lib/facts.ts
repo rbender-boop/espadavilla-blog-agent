@@ -61,10 +61,10 @@ export const CANONICAL_FACTS = {
   },
   golf: {
     puntaEspada:
-      'Punta Espada: Jack Nicklaus Signature, par 72, opened 2006. Ranked #1 in the Caribbean and Mexico by GolfWeek; Golf Digest world top 100. Hosted the PGA Champions Tour Cap Cana Championship 2008–2010 (Fred Couples won the 2010 finale). Signature hole: No. 13, a ~250-yard par-3 over the Caribbean Sea.',
+      'Punta Espada: Jack Nicklaus Signature, par 72, opened 2006. Ranked #1 in the Caribbean and Mexico by GolfWeek for eight consecutive years; Golf Digest world top 100. Hosted the PGA Champions Tour Cap Cana Championship 2008–2010 (Fred Couples won the 2010 finale). Signature hole: No. 13, a ~250-yard par-3 over the Caribbean Sea.',
     lasIguanas:
-      'Las Iguanas: second Nicklaus Signature course at Cap Cana; 18 holes, 3 oceanside holes, 10 inland lakes. ~3 min by golf cart.',
-    summary: '36 holes of Nicklaus golf available without leaving Cap Cana.',
+      'Las Iguanas: second Nicklaus Signature course at Cap Cana. Front nine open now; the back nine (including the oceanside holes 12-14) is still under construction, with the full 18 completing by the end of 2026 and the official opening in spring 2027. Designed as 18 holes with 3 oceanside holes and 10 inland lakes; ~3 min by golf cart. NEVER state it opened as a full 18 in November 2025, that it is "now open" / "brand-new," or that the oceanside holes are currently playable.',
+    summary: 'Two Jack Nicklaus Signature courses inside Cap Cana: Punta Espada (open) and Las Iguanas (front nine open now; full 18 by the end of 2026). "36 holes" is accurate only once Las Iguanas completes; phrase as "two Nicklaus courses," never "36 holes available now."',
     nearby:
       'Nearby: Corales (Tom Fazio, PGA Tour Corales Puntacana Championship), La Cana (P.B. Dye, 27 holes), Teeth of the Dog (Pete Dye, Casa de Campo, ~1 hr west).',
   },
@@ -232,6 +232,43 @@ export function checkVillaFacts(text: string): FactCheckVerdict {
   // Also catch bare "food billed at cost" or "billed at cost" (food context) without the 15%
   if (/(?:food|groceries|f&b|meals|beverage)[\w\s,]+billed at cost(?! plus a 15)/.test(t)) {
     violations.push('food billed at cost without 15% service charge — use canonical phrasing');
+  }
+
+  // Golf-fact canonical checks (added 2026-08-26): Las Iguanas is a phased opening —
+  // front nine open now, full 18 (incl. oceanside holes 12–14) by end of 2026, official
+  // opening spring 2027. Punta Espada's GolfWeek #1 must be bound to "eight consecutive years".
+  const BAD_GOLF_PHRASES = [
+    '36 holes of nicklaus golf available',
+    '36 holes available without leaving',
+    '36 holes of golf without leaving',
+    '36 holes of nicklaus golf without leaving',
+  ];
+  for (const phrase of BAD_GOLF_PHRASES) {
+    if (t.includes(phrase)) {
+      violations.push(`banned golf phrase "${phrase}" — Las Iguanas is phased (front nine open; full 18 by end 2026); use "two Nicklaus courses"`);
+    }
+  }
+  // Las Iguanas open-status overstatement (co-occurrence within ~200 chars of "las iguanas")
+  const liIdx = t.indexOf('las iguanas');
+  if (liIdx !== -1) {
+    for (const b of ['now open', 'opened in november 2025', 'opened november 2025', 'fully open', 'brand-new', 'brand new', 'grand opening']) {
+      const bi = t.indexOf(b);
+      if (bi !== -1 && Math.abs(bi - liIdx) < 200) {
+        violations.push(`Las Iguanas overstatement "${b}" — front nine open now; full 18 by end 2026, official opening spring 2027`);
+        break;
+      }
+    }
+  }
+  // Punta Espada GolfWeek #1 must be time-bound
+  if (/(?:#1|number[\s-]?one)[^.<\n]{0,45}(?:caribbean|mexico)/.test(t) && !/(consecutive years|straight years|years running|for eight years|eight consecutive)/.test(t)) {
+    violations.push('GolfWeek #1 Caribbean/Mexico claim not bound to "for eight consecutive years"');
+  }
+  // "36 holes of Nicklaus golf" stated as currently available (phased: front nine only)
+  for (const m of t.matchAll(/36[\s-]?holes?\s+of\s+(?:jack\s+)?nicklaus[^.]{0,90}/g)) {
+    if (!/once|by (?:the )?end|completes?|complet(?:e|ing)|two nicklaus courses/.test(m[0])) {
+      violations.push('claims "36 holes of Nicklaus golf" as currently available — Las Iguanas is phased; use "two Nicklaus courses"');
+      break;
+    }
   }
 
   if (violations.length === 0) return { flagged: false, reason: null };
