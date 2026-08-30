@@ -1,11 +1,12 @@
-COWORK SCHEDULED-TASK PROMPT v4 — "Blog Editorial (Espadavilla + Golfvilla)" (2026-08-20)
+COWORK SCHEDULED-TASK PROMPT v5 — "Blog Editorial (Espadavilla + Golfvilla)" (2026-08-30)
 Live task: trig_0179EPTYJGfRj4fyDxfhzc9d — Mondays + Thursdays 14:30 UTC (10:30am EDT),
-push + email notifications ON, cloud-run (no local device). v4 extends v2/v3:
-the SAME editorial loop now runs TWICE — espadavilla first, then golfvilla —
-each with its own lane gate, plus a cross-site cannibalization check.
-NEVER create a second task; edit this one via update_trigger only.
-(This file replaces the old golfvilla-only approval prompt — superseded by
-the unified two-site task per build-plan decision D3.)
+push + email notifications ON, cloud-run (no local device). v5 updates v4 (2026-08-30):
+reject_post NO LONGER requeues the topic by default, and a DB dedupe guard now
+auto-marks colliding new topics status='duplicate' on both projects — see step 7
+and the mechanics notes. Otherwise identical to v4: the SAME editorial loop runs
+TWICE — espadavilla first, then golfvilla — each with its own lane gate, plus a
+cross-site cannibalization check. NEVER create a second task; edit this one via
+update_trigger only.
 
 Schedule context: espadavilla drafting cron fires Thu 14:00 UTC (worker drains
 14:00–17:59); golfvilla drafting fires Mon/Thu 13:00 UTC (worker 13:00–16:59).
@@ -32,7 +33,7 @@ STEPS (per site):
    - Golfvilla drafts: REJECT-recommend anything in espadavilla's lane — "Villa Espada"/espadavilla branded terms (hard ban), N-bedroom stay intent, member rates / tee times, shuttle/cart/transfer, beach club/Caleton/Juanillo, wedding/birthday/bachelor, sargassum, how-far/getting-around, chef/butler — and any Punta Espada / Cap Cana title lacking a comparative or category-plural marker. (Golfvilla's topic-select now auto-rejects these with `[lane]` log lines; a lane-violating draft reaching this review means the guard missed — flag it.)
 5. CROSS-SITE CANNIBALIZATION CHECK: run on the OTHER project select slug, meta_title from blog_post_drafts where status='published'; Any pending draft whose target intent overlaps a published slug on the other site = automatic REJECT recommendation, naming the overlapping URL.
 6. Recommendation (APPROVE / EDIT / REJECT / REJECT+REFRESH) with evidence. Default REJECT unless ALL pass:
-   a. Net-new intent — no published post or core page on THIS site already covers it (select slug, meta_title, cluster from blog_post_drafts where status='published';).
+   a. Net-new intent — no published post or core page on THIS site already covers it (select slug, meta_title, cluster from blog_post_drafts where status='published'; plus select url, keywords from core_pages; — the core_pages table on each project lists the site's non-blog pages).
    b. Real demand or AEO gap — GSC (Windsor.ai, correct site per loop) shows impressions/queries for the target intent, OR the post is answer-shaped content targeting a known AI-citation gap.
    c. Lane gate (step 4) passes AND cross-site check (step 5) passes.
    d. Fit — the site SHOULD or COULD genuinely win this query (honest product fit).
@@ -40,9 +41,10 @@ STEPS (per site):
    AI-slop check: formulaic transitions, "Whether you're...", ": How to Choose the Right One" title template, rule-of-three overuse, em-dash spam, generic conclusions, stale/unverifiable facts. If found, propose humanized replacement text via edit_post. Facts discipline: GolfWeek #1 (never Golf Digest as the #1 source), Caribbean Sea (never Atlantic), "6-or-8 bedroom" never "8" alone, member rates only via the Villa Espada butler.
 7. Act ONLY through these RPCs after Rob answers (never UPDATE tables directly), on the CORRECT project_id:
    approve as-is: select approve_post('<id>');  |  edit & approve: select edit_post('<id>', '<full new text>');  |  reject: select reject_post('<id>', '<short reason>');
-   (reject_post requeues the topic — if the topic itself is lane-violating, also propose cancelling it; edit_post saves edited_content AND approves.)
+   (Since 2026-08-30 reject_post RETIRES the topic by default — status='rejected', no requeue. Pass a third argument true — select reject_post('<id>', '<reason>', true); — ONLY when the intent is good and deserves a redraft with different content. edit_post saves edited_content AND approves.)
 8. Failure report (per site): select run_type, status, left(error_message,200) err, started_at from blog_agent_runs where started_at > now() - interval '7 days' and status in ('failure','partial') and run_type <> 'failure_monitor' order by started_at desc limit 20; One line per site.
 9. Weekly outcomes (per site): select status, count(*) from blog_post_drafts where updated_at > now() - interval '7 days' group by status; One line per site.
+   Also: select id, title, primary_keyword, left(notes,160) from blog_topics where status='duplicate' and updated_at > now() - interval '7 days'; — topics the dedupe guard intercepted. One line per site; if the guard mis-flagged a genuinely new intent, tell Rob and (with his OK) update that topic back to status='queued'.
 10. End with one combined wrap-up paragraph covering both sites, including any lane-guard misses observed.
 
 If the Supabase connector is unavailable in this run, tell Rob immediately and stop — do not attempt any workaround.
@@ -51,6 +53,8 @@ If the Supabase connector is unavailable in this run, tell Rob immediately and s
 Notes (mechanics):
 - Approving flips the draft to status='approved'; each site's drain-approved cron (every 15 min) publishes it in one atomic commit (IndexNow + sitemap/index/llms.txt included).
 - v_pending_approvals covers pending | sent_for_approval | pending_edit_confirmation on both projects.
-- Views + the three RPCs are SECURITY DEFINER, search_path='', service_role ONLY, on BOTH projects (verified 2026-08-20).
+- Views + the three RPCs are SECURITY DEFINER, search_path='', service_role ONLY, on BOTH projects (reject_post recreated 2026-08-30 with signature (uuid, text, boolean default false)).
+- DEDUPE GUARD (added 2026-08-30, both projects): a BEFORE INSERT trigger on blog_topics (trg_blog_topics_dedupe) fuzzy-matches new queued topics (pg_trgm on normalized keyword/title) against published drafts, ALL existing topics (incl. cancelled — the graveyard), and the core_pages table (seeded from each site's sitemap: 131 rows espadavilla, 41 golfvilla). Collisions land as status='duplicate' with an auto-note naming the match; they are never drafted. Topics with refreshes_draft_id set bypass the guard (intentional refreshes). core_pages should be re-seeded when new site pages launch — flag to Rob if a new core page is known to be missing.
+- TOPIC-GEN TODO (Layer 4, not yet built): gsc_topics should emit REFRESH topics (refreshes_draft_id path) instead of new-URL topics for queries where the site already ranks (GSC position < ~20). Until then the DB guard intercepts the duplicates.
 - Editing the task: use update_trigger on trig_0179EPTYJGfRj4fyDxfhzc9d (never create a second task — duplication is what killed the last setup).
 - This file is versioned identically in BOTH repos at docs/cowork-approval-prompt.md.
