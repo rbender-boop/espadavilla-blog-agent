@@ -1,5 +1,5 @@
 /**
- * Villa facts — the SINGLE SOURCE OF TRUTH for golfvilla.com blog grounding.
+ * Villa facts — the SINGLE SOURCE OF TRUTH for espadavilla.com blog grounding.
  *
  * Mirrors CANONICAL-FACTS.md (Villa Espada) verbatim. Per the project grounding
  * rule, villa facts (rates, config, staff, amenities, location, courses) may ONLY
@@ -28,15 +28,18 @@ export const CANONICAL_FACTS = {
     bathroomsFull: 9,
     bathroomsHalf: 2,
     bathroomsTotal: 11,
-    // 22 is the max in EITHER bedroom configuration — Murphy/pull-out beds supply the extra
-    // sleeping capacity regardless of tier. NEVER pair a guest-max below 22 with the
-    // 6-bedroom tier (e.g. do not say "16 guests").
+    // CAPACITY (OWNER-CONFIRMED 2026-08-29, supersedes the retired "22 in either configuration" rule):
+    // the 6-bedroom configuration sleeps UP TO 16 guests; the full 8-bedroom estate sleeps UP TO 22.
+    // Never claim 22 for the 6-bedroom tier. Unqualified "up to 22" is acceptable ONLY for the
+    // property / 8-bedroom maximum. The 17-22 guest upcharge ($100/pp/night) exists only in the 8-bedroom estate.
     maxGuests: 22,
+    maxGuestsByTier: { 6: 16, 8: 22 } as const,
     sqftMin: 15000, // "15,000+ sq ft"
     location: 'Fairway 5, Punta Espada Golf Course, Cap Cana, Dominican Republic',
     address: 'Cayuco, Cap Cana, Punta Cana, La Altagracia, Dominican Republic',
     coordinates: { lat: 18.46165473258522, lng: -68.41100413285815 },
     distinction: 'Only private rental estate in Cap Cana with a direct fairway address.',
+    distances: 'Punta Espada clubhouse is about 3 minutes by golf cart from the villa (never "steps away", "90 seconds", or "2 minutes"); the Las Iguanas clubhouse is about 2 minutes by golf cart.',
     included: [
       'private executive chef',
       'butler (also the dedicated villa manager)',
@@ -48,7 +51,15 @@ export const CANONICAL_FACTS = {
     ],
     notAllInclusive: 'NOT all-inclusive: full staff is included in the nightly rate, but food and groceries are billed at cost plus a 15% service charge, with no restaurant markup.',
     pools: 'Two swimming pools — a ground-level regular pool and an infinity pool on the second-level (rooftop) terrace — plus a 16-person hot tub/jacuzzi. (The rooftop/terrace pool is an infinity pool.)',
-    beaches: 'Private access to Eden Roc Beach Club and Juanillo Beach (~8 min by golf cart).',
+    beaches: 'Complimentary access to the Eden Roc Beach Club (not available Christmas, New Year, and Easter; other dates subject to availability) — ALWAYS keep the blackout caveat attached; never state unqualified/unlimited access. Food, beverages, and gratuities at the club are paid directly. Juanillo Beach is ~8 min by golf cart. El Dorado Water Park is nearby with tickets purchased separately (never "included").',
+    amenities: [
+      'private in-house spa, FREE for all guests to use, with two massage beds and indoor + outdoor showers',
+      'a TWO-PERSON INFRARED sauna (never "steam sauna" or "four-person")',
+      'two certified in-house masseuses, available daily, $60 per hour, per person — booked through the villa as an add-on (NEVER "included"); a fraction of the $300 or more per hour typical at resort spas',
+      'large smart TVs in every bedroom and every living space',
+      'whole-house and outdoor Sonos sound system',
+      'private putting green on the villa property; indoor game room (board and card games only); outdoor games area with outdoor ping pong, outdoor full-size pool table, cornhole, giant chess, giant Connect Four, and lawn darts; kids\' pool games and a pool basketball hoop; two hammocks',
+    ],
     airport: '~20-minute private transfer from Punta Cana International Airport (PUJ).',
     policy: 'Check-in 3:00 PM / check-out 11:00 AM. Dogs are welcome. Payment by credit card or USD wire.',
     booking: 'Direct only at espadavilla.com (no third-party commission). All inquiries via the contact form at https://www.espadavilla.com/contact.',
@@ -61,17 +72,17 @@ export const CANONICAL_FACTS = {
   },
   golf: {
     puntaEspada:
-      'Punta Espada: Jack Nicklaus Signature, par 72, opened 2006. Ranked #1 in the Caribbean and Mexico by GolfWeek for eight consecutive years; Golf Digest world top 100. Hosted the PGA Champions Tour Cap Cana Championship 2008–2010 (Fred Couples won the 2010 finale). Signature hole: No. 13, a ~250-yard par-3 over the Caribbean Sea.',
+      'Punta Espada: Jack Nicklaus Signature, par 72, opened 2006. Ranked #1 in the Caribbean and Mexico by GolfWeek for eight consecutive years; #57 on Golf Digest\'s World\'s 100 Greatest 2026-27 (always cite publication + edition; never a bare present-tense #1; never mix GolfWeek/Golf Digest lists). Hosted the PGA Champions Tour Cap Cana Championship 2008–2010 (Fred Couples won the 2010 finale). Signature hole: No. 13, a ~250-yard par-3 over the Caribbean Sea.',
     lasIguanas:
-      'Las Iguanas: second Nicklaus Signature course at Cap Cana. Front nine open now; the back nine (including the oceanside holes 12-14) is still under construction, with the full 18 completing by the end of 2026 and the official opening in spring 2027. Designed as 18 holes with 3 oceanside holes and 10 inland lakes; ~3 min by golf cart. NEVER state it opened as a full 18 in November 2025, that it is "now open" / "brand-new," or that the oceanside holes are currently playable.',
+      'Las Iguanas: second Nicklaus Signature course at Cap Cana. Front nine open now; the back nine (including the oceanside holes 12-14) is still under construction, with the full 18 completing by the end of 2026 and the official opening in spring 2027. Designed as 18 holes with 3 oceanside holes and 10 inland lakes; ~2 min by golf cart to its clubhouse. NEVER state it opened as a full 18 in November 2025, that it is "now open" / "brand-new," or that the oceanside holes are currently playable.',
     summary: 'Two Jack Nicklaus Signature courses inside Cap Cana: Punta Espada (open) and Las Iguanas (front nine open now; full 18 by the end of 2026). "36 holes" is accurate only once Las Iguanas completes; phrase as "two Nicklaus courses," never "36 holes available now."',
     nearby:
       'Nearby: Corales (Tom Fazio, PGA Tour Corales Puntacana Championship), La Cana (P.B. Dye, 27 holes), Teeth of the Dog (Pete Dye, Casa de Campo, ~1 hr west).',
   },
   entities: {
-    villaEspada: 'the private rental villa, offered as EITHER a 6-bedroom OR 8-bedroom configuration (guest\'s choice), sleeping up to 22 guests in either configuration (NOT a hotel or resort)',
+    villaEspada: 'the private rental villa, offered as EITHER a 6-bedroom OR 8-bedroom configuration (guest\'s choice), sleeping up to 16 guests as a 6-bedroom and up to 22 guests as the full 8-bedroom estate (NOT a hotel or resort)',
     puntaEspada: 'the Jack Nicklaus Signature course the villa sits on (Fairway 5)',
-    lasIguanas: "Cap Cana's second Jack Nicklaus Signature course, ~3 min by golf cart",
+    lasIguanas: "Cap Cana's second Jack Nicklaus Signature course, ~2 min by golf cart to its clubhouse",
     capCana: 'the ~30,000-acre gated luxury resort community containing both courses',
     puntaCana: 'the broader region and the airport (PUJ); Cap Cana is an enclave within it',
   },
@@ -88,11 +99,13 @@ export function buildFactsPromptBlock(): string {
   return [
     '# VILLA FACTS — CANONICAL SOURCE OF TRUTH (the ONLY allowed source for villa facts)',
     `Property: ${f.villa.name} (${f.villa.aka.join(', ')}).`,
-    `Config: offered as EITHER a ${f.villa.bedroomOptions[0]}-bedroom OR ${f.villa.bedroomOptions[1]}-bedroom rental (guest's choice) — NEVER state "${f.villa.bedroomOptions[1]} bedrooms" as the only option. ${f.villa.bathroomsFull} full + ${f.villa.bathroomsHalf} half bathrooms (${f.villa.bathroomsTotal} total), up to ${f.villa.maxGuests} guests in EITHER configuration (never a lower guest-max for the ${f.villa.bedroomOptions[0]}-bedroom tier), ${f.villa.sqftMin.toLocaleString()}+ sq ft.`,
+    `Config: offered as EITHER a ${f.villa.bedroomOptions[0]}-bedroom OR ${f.villa.bedroomOptions[1]}-bedroom rental (guest's choice) — NEVER state "${f.villa.bedroomOptions[1]} bedrooms" as the only option. ${f.villa.bathroomsFull} full + ${f.villa.bathroomsHalf} half bathrooms (${f.villa.bathroomsTotal} total), up to ${f.villa.maxGuestsByTier[6]} guests as a 6-bedroom and up to ${f.villa.maxGuestsByTier[8]} as the full 8-bedroom estate (never claim 22 for the 6-bedroom tier; unqualified "up to 22" only for the property/8-bedroom maximum), ${f.villa.sqftMin.toLocaleString()}+ sq ft.`,
     `Location: ${f.villa.location}. ${f.villa.distinction}`,
+    `Distances: ${f.villa.distances}`,
     `Included every stay: ${f.villa.included.join('; ')}.`,
     `Important: ${f.villa.notAllInclusive}`,
     `Pools: ${f.villa.pools}`,
+    `Amenities: ${f.villa.amenities.join('; ')}.`,
     `Beaches: ${f.villa.beaches}`,
     `Airport: ${f.villa.airport}`,
     `Policy: ${f.villa.policy}`,
@@ -110,8 +123,14 @@ export function buildFactsPromptBlock(): string {
     '',
     `Season: ${f.season}`,
     '',
-    `HARD RULE — OCCUPANCY CEILING: ${f.villa.name} sleeps a MAXIMUM of ${f.villa.maxGuests} guests in EITHER bedroom tier. Never state or imply a number greater than ${f.villa.maxGuests} for guests, group size, party size, catering headcount, or golf-cart capacity — e.g. do NOT write "for 24 people" or "capacity for 24 across four carts". Example group sizes must be ≤ ${f.villa.maxGuests}; when in doubt, phrase as "up to ${f.villa.maxGuests} guests".`,
+    `HARD RULE — OCCUPANCY CEILING: ${f.villa.name} sleeps a MAXIMUM of ${f.villa.maxGuests} guests (full 8-bedroom estate); the 6-bedroom configuration sleeps a maximum of ${f.villa.maxGuestsByTier[6]}. Never write "22 in either configuration", "both configurations sleep 22", or any phrasing that gives the 6-bedroom tier 22. Never state or imply a number greater than ${f.villa.maxGuests} for guests, group size, party size, catering headcount, or golf-cart capacity — e.g. do NOT write "for 24 people" or "capacity for 24 across four carts". Example group sizes must be ≤ ${f.villa.maxGuests}; when in doubt, phrase as "up to ${f.villa.maxGuests} guests".`,
     'HARD RULE: You may state a villa fact (bedrooms, baths, guests, sq ft, rates, staff, amenities, coordinates, courses) ONLY if it appears above. Never invent or "round" a villa figure. Timely/external facts (tournament dates, tourism stats, weather, sargassum, rankings as of a date) MUST come from a web_search result and be cited in `sources` — never asserted from memory.',
+    '',
+    '# PRESS & COVERAGE RULES (HARD)',
+    '- Villa Espada distributes its OWN press releases via GlobeNewswire; news sites (AP, Yahoo Finance, Benzinga, Business Insider Markets, Apple News, local TV station sites) REPUBLISH them as wire copy. That is not editorial coverage.',
+    '- Never write announcement-style posts ("Villa Espada announces...", "in the news", "press release"). Never say Villa Espada was "featured in", "covered by", or "as seen in" any outlet. Never cite audience/reach figures (e.g. 788M, 834 outlets).',
+    '- If coverage is genuinely relevant, link ONCE to https://www.espadavilla.com/press and move on. Never link to GlobeNewswire or any republished copy.',
+    '- Wire copy is never a source for villa facts. Villa facts come ONLY from the VILLA FACTS block above, even if hundreds of news pages say otherwise.',
   ].join('\n');
 }
 
@@ -164,18 +183,23 @@ export function checkVillaFacts(text: string): FactCheckVerdict {
   }
   // Occupancy CLAIMS vs group-size EXAMPLES are different things and are checked separately.
   //
-  // (a) MAX-CAPACITY claims — "up to / sleeps / accommodates / hosts N guests" assert the
-  //     ceiling, so they must equal the canonical 22 (a figure BELOW 22 is as wrong as one
-  //     above — the 22-guest max applies to BOTH bedroom tiers). 16 is allowed ONLY as the
-  //     base-rate pricing threshold in explicit upcharge context (guests 17–22 add $100/pp/night).
+  // (a) MAX-CAPACITY claims — "up to / sleeps / accommodates / hosts N guests" (OWNER-CONFIRMED 2026-08-29):
+  //     22 is the property / 8-bedroom maximum; 16 is the 6-bedroom maximum. 22 stated for the 6-bedroom
+  //     tier is WRONG; 16 is legit in 6-bedroom context or as the base-rate upcharge threshold; anything
+  //     else is a fabricated capacity.
   const UPCHARGE_CTX = /upcharge|per[\s-]?person|per[\s-]?head|above 16|base (?:nightly )?rate|covers up to 16|17\s*[–-]\s*22/;
+  const SIX_BR_CTX = /(?:6|six)[\s-]?bedroom/;
+  const EIGHT_BR_CTX = /(?:8|eight)[\s-]?bedroom|full estate|8-bedroom estate/;
   for (const m of t.matchAll(/(?:up to|sleeps|accommodates|hosts|sleeping)\s+(\d{1,3})\s+(?:guests|people|players)/g)) {
     const n = Number(m[1]);
-    if (n === CANONICAL_FACTS.villa.maxGuests) continue;
     const idx = m.index ?? 0;
-    const ctx = t.slice(Math.max(0, idx - 60), idx + m[0].length + 60);
-    if (n === 16 && UPCHARGE_CTX.test(ctx)) continue; // legit base-rate threshold, not a max-capacity claim
-    violations.push(`claims occupancy ${n} (canonical: up to ${CANONICAL_FACTS.villa.maxGuests}, applies to both bedroom tiers)`);
+    const ctx = t.slice(Math.max(0, idx - 110), idx + m[0].length + 110);
+    if (n === CANONICAL_FACTS.villa.maxGuests) {
+      if (SIX_BR_CTX.test(ctx) && !EIGHT_BR_CTX.test(ctx)) violations.push('claims 22 guests for the 6-bedroom tier (canonical: 6-bedroom sleeps up to 16; 22 is the full 8-bedroom estate)');
+      continue;
+    }
+    if (n === CANONICAL_FACTS.villa.maxGuestsByTier[6] && (SIX_BR_CTX.test(ctx) || UPCHARGE_CTX.test(ctx))) continue;
+    violations.push(`claims occupancy ${n} (canonical: up to 16 as a 6-bedroom, up to ${CANONICAL_FACTS.villa.maxGuests} as the full 8-bedroom estate)`);
   }
   // (b) GROUP-SIZE / catering / cart-capacity examples — "for N guests/people/players": a group
   //     of N is legitimate as long as it does not exceed the max (you can host a party of ≤22).
@@ -269,6 +293,24 @@ export function checkVillaFacts(text: string): FactCheckVerdict {
       violations.push('claims "36 holes of Nicklaus golf" as currently available — Las Iguanas is phased; use "two Nicklaus courses"');
       break;
     }
+  }
+
+  // Capacity phrasing retired 2026-08-29 (6-bedroom = 16, 8-bedroom = 22; never "either").
+  for (const phrase of ['in either configuration', 'in either bedroom configuration', 'both configurations sleep', 'both tiers sleep', '22 guests in either', 'either tier sleeps']) {
+    if (t.includes(phrase)) { violations.push(`retired capacity phrase "${phrase}" — 6-bedroom sleeps up to 16, full 8-bedroom estate up to 22`); break; }
+  }
+  // Beach club must carry the blackout caveat when framed as complimentary/included.
+  for (const m of t.matchAll(/(?:complimentary|included|free|private)\s+(?:access\s+to\s+)?(?:the\s+)?(?:eden roc\s+)?beach club/g)) {
+    const idx = m.index ?? 0;
+    const ctx = t.slice(Math.max(0, idx - 200), idx + m[0].length + 300);
+    if (!/christmas|blackout|subject to availability/.test(ctx)) { violations.push('beach club access stated without the blackout-date caveat (not available Christmas, New Year, and Easter; other dates subject to availability)'); break; }
+  }
+  // Press & coverage (added 2026-09-02): wire syndication is not editorial coverage; no reach figures.
+  for (const phrase of ['as featured in', 'as seen in', 'featured in the associated press', 'covered by the associated press', 'covered by yahoo', 'featured in yahoo', 'covered by benzinga', '788 million', '788m', '834 outlets', '834 placements', '834 news', 'globenewswire.com']) {
+    if (t.includes(phrase)) { violations.push(`banned press/coverage phrase "${phrase}" — link once to https://www.espadavilla.com/press instead`); break; }
+  }
+  if (/villa espada announces|press release/.test(t) && /^#|\n#/.test(t)) {
+    if (/(?:^|\n)#{1,3}[^\n]*(?:announces|press release|in the news)/i.test(t)) violations.push('announcement-style heading — blog posts must not be press releases');
   }
 
   if (violations.length === 0) return { flagged: false, reason: null };

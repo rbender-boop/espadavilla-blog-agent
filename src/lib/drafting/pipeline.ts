@@ -368,6 +368,7 @@ function buildResearchSystemPrompt(): string {
     '# WHAT TO GATHER',
     '- Only timely/external facts: tournament dates, tourism statistics, course rankings (as of a date), course open/closed status, travel/visa notes, weather or sargassum conditions — whatever THIS topic requires.',
     '- Do NOT gather or assert villa-specific figures (bedrooms, capacity, nightly rates). Those come from a separate trusted source the writer already has.',
+    '- NEVER use press-release syndication pages as sources for anything about Villa Espada: GlobeNewswire, any /press-release/ or /pressreleases/ path (AP, Yahoo Finance, Benzinga, Business Insider Markets, local TV station sites), Apple News wire copy, or podcast read-throughs of releases. Those are Villa Espada\'s own announcements, not third-party facts. Villa facts come from the trusted facts block the writer already has.',
     '- Run web_search for each fact. If a fact cannot be confirmed, do not guess — record it in "notes" so the writer can write around it.',
     '',
     '# OUTPUT',
@@ -422,6 +423,7 @@ function buildDraftSystemPrompt(memoryBlock: string): string {
     '- OCCUPANCY & UPCHARGE (HARD): The base nightly rate covers up to 16 guests; guests 17–22 add $100 per person, per night. NEVER claim there is "no per-person charge" (or "no per-head charge") for the 8th/17th/22nd guest or up to 22. When computing per-person cost for a group of 17–22, first add $100/night for each guest above 16, THEN divide — do not divide the bare base rate by the full group size.',
     '- For every researched fact you use, copy it into "sources" with the URL provided. If the facts block lacks something you wanted, write around it rather than guessing.',
     '- Schema downstream is BlogPosting + exactly one FAQPage. Do not reference VacationRental.',
+    '- PRESS & COVERAGE: Villa Espada distributes its own press releases via GlobeNewswire; AP, Yahoo Finance, Benzinga and local TV sites REPUBLISH them as wire copy. Never write announcement-style posts, never say Villa Espada was "featured in" or "covered by" an outlet, never cite reach figures. If coverage is relevant, link once to https://www.espadavilla.com/press and move on.',
   ].join('\n');
 }
 
