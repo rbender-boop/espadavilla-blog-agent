@@ -14,7 +14,7 @@ import { addUrlToSitemap } from '../src/lib/publish/update-sitemap';
 import { upsertIndexCard } from '../src/lib/publish/update-index';
 import { upsertLlmsEntry } from '../src/lib/publish/update-llms';
 import { pickPostImage } from '../src/lib/publish/blog-images';
-import { checkVillaFacts } from '../src/lib/facts';
+import { checkVillaFacts, checkVillaFactsByField } from '../src/lib/facts';
 import { checkNegativeList } from '../src/lib/keywords';
 import { postUrl } from '../src/lib/links';
 import { scoreOverlap, type PublishedPost } from '../src/lib/drafting/overlap-score';
@@ -102,7 +102,31 @@ check('chrome: no .html hrefs emitted by templates', !/href="\/[a-z-]+\.html"/.t
 check('guard: clean body passes', !checkVillaFacts(SAMPLE.body_markdown).flagged);
 check('guard: wrong bedroom count flagged', checkVillaFacts('This 12-bedroom villa sleeps everyone.').flagged);
 check('guard: wrong nightly rate flagged', checkVillaFacts('Rates start at $999 per night.').flagged);
-check('guard: correct facts pass', !checkVillaFacts('The 8-bedroom villa sleeps up to 22 guests from $2,500 per night.').flagged);
+check('guard: correct facts pass', !checkVillaFacts('The 6- or 8-bedroom villa sleeps up to 22 guests as the full estate, from $2,500 per night.').flagged);
+
+// 4b. Field-aware guard (2026-09-03) — FAQ + meta scanned as their own fields, violations tagged by field.
+const GW_OK = 'Punta Espada is ranked #1 in the Caribbean and Mexico by GolfWeek for eight consecutive years.';
+const RATE_OK = 'Guests receive the Punta Espada member-guest discounted rate, arranged through the villa\'s butler; Las Iguanas is played at regular rates.';
+const fa1 = checkVillaFactsByField({ body_markdown: GW_OK, faq: ['Is Punta Espada top ranked? Yes, it is the #1 course in the Caribbean.'] });
+check('guard(field): unbound GolfWeek #1 in FAQ flagged even when body is bound', fa1.flagged && /\[faq\[0\]\]/.test(fa1.reason ?? ''), fa1.reason ?? '');
+check('guard(field): non-course "#1 destination in the Caribbean" is NOT a GolfWeek claim', !/GolfWeek/.test(checkVillaFactsByField({ body_markdown: 'Punta Cana is the #1 destination in the Caribbean for family travel.' }).reason ?? ''));
+check('guard(field): bound GolfWeek + butler-bound rate pass', !checkVillaFactsByField({ body_markdown: `${GW_OK} ${RATE_OK}`, faq: [`Q? ${GW_OK}`, `Q? ${RATE_OK}`] }).flagged);
+check('guard(field): "top-10 world-ranked" for Punta Espada flagged', checkVillaFactsByField({ faq: ['Why? Punta Espada is a top-10 world-ranked course.'] }).flagged);
+check('guard(field): "#35 in the world by Golf Digest ... #1 by GolfWeek" passes Golf-Digest check', !/Golf Digest\/Golf Magazine cited/.test(checkVillaFactsByField({ body_markdown: 'Punta Espada is ranked #57 on Golf Digest\'s World\'s 100 Greatest 2026-27 and #1 in the Caribbean and Mexico by GolfWeek for eight consecutive years.' }).reason ?? ''));
+check('guard(field): Golf Digest as #1 source flagged', checkVillaFactsByField({ body_markdown: 'Ranked #1 in the Caribbean by Golf Digest for eight consecutive years.' }).flagged);
+check('guard(field): member rate without butler in FAQ flagged, tagged [faq]', /\[faq\] member-guest rate mentioned without/.test(checkVillaFactsByField({ faq: ['Q? Guests book Punta Espada at the member-guest discounted rate.'] }).reason ?? ''));
+check('guard(field): member rate in meta_description does NOT need butler', !checkVillaFactsByField({ meta_description: 'Member-guest discounted rates at Punta Espada from a fairway-address villa.' }).flagged);
+check('guard(field): "and access to Las Iguanas" structure passes', !/claimed at Las Iguanas/.test(checkVillaFactsByField({ body_markdown: `${RATE_OK.replace('; Las Iguanas is played at regular rates', ' and access to Las Iguanas')}` }).reason ?? ''));
+check('guard(field): member rates "at Punta Espada and Las Iguanas" flagged', /claimed at Las Iguanas/.test(checkVillaFactsByField({ body_markdown: 'Guests get member rates at Punta Espada and Las Iguanas, arranged through the butler.' }).reason ?? ''));
+check('guard(field): Atlantic for Punta Espada flagged', /Atlantic/.test(checkVillaFactsByField({ faq: ['Q? Punta Espada has eight holes on the Atlantic Ocean.'] }).reason ?? ''));
+check('guard(field): "Atlantic hurricane season" near Punta Espada passes', !/Atlantic/.test(checkVillaFactsByField({ body_markdown: 'Punta Espada is in peak condition in winter; the Atlantic hurricane season runs June to November.' }).reason ?? ''));
+check('guard(field): 9 ocean holes flagged', /ocean holes/.test(checkVillaFactsByField({ body_markdown: 'Punta Espada has nine ocean holes.' }).reason ?? ''));
+check('guard(field): "8-bedroom" alone in meta_title flagged', /8-bedroom/.test(checkVillaFactsByField({ meta_title: '8-Bedroom Villa on Punta Espada Fairway 5' }).reason ?? ''));
+check('guard(field): "six- or eight-bedroom" passes', !checkVillaFactsByField({ summary: 'The six- or eight-bedroom villa sleeps up to 22 guests as the full estate.' }).flagged);
+check('guard(field): FAQ item naming only the 8-bedroom tier passes when a sibling names 6', !checkVillaFactsByField({ faq: ['Q? The full 8-bedroom estate sleeps up to 22.', 'Q? The 6-bedroom configuration sleeps up to 16.'] }).flagged);
+check('guard(field): "22 guests in either a 6-bedroom or 8-bedroom" flagged', /22 guests in either/.test(checkVillaFactsByField({ faq: ['Q? Sleeps up to 22 guests in either a 6-bedroom or 8-bedroom configuration.'] }).reason ?? ''));
+check('guard(field): composite $4,400 nightly rate flagged', /4,400/.test(checkVillaFactsByField({ faq: ['Q? Nightly rates average $4,400 per night.'] }).reason ?? ''));
+check('guard(field): reason names the field', /^\[meta_description\] claims occupancy 30/.test((checkVillaFactsByField({ meta_description: 'Sleeps 30 guests.' }).reason ?? '').replace(/^Villa-fact contradiction vs CANONICAL-FACTS\.md — /, '')));
 
 // 5. Negative-list guard — DROPPED for espadavilla (checkNegativeList is a no-op).
 //    espadavilla has no hard geo guard; "stay on Cap Cana" is advisory only.

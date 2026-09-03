@@ -12,7 +12,7 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import { supabase } from '../supabase';
-import { buildFactsPromptBlock, checkVillaFacts } from '../facts';
+import { buildFactsPromptBlock, checkVillaFactsByField, type FactFieldInput } from '../facts';
 import { buildKeywordPromptBlock, checkNegativeList } from '../keywords';
 import { buildVoicePromptBlock } from '../niche';
 import { getBlogMemoryPromptBlock } from '../voice-memory';
@@ -99,8 +99,8 @@ export async function generatePostForTopic(topic: TopicRow): Promise<SavedDraft>
 
   const { post, notes } = await draftWithEnforcement(systemPrompt, userPrompt);
 
-  // Anti-fabrication backstops.
-  const factVerdict = checkVillaFacts(`${post.h1}\n${post.body_markdown}\n${post.faq.map((f) => `${f.q} ${f.a}`).join('\n')}`);
+  // Anti-fabrication backstops (field-aware since 2026-09-03: FAQ + meta scanned as their own fields).
+  const factVerdict = checkVillaFactsByField(postFactFields(post));
   const negVerdict = checkNegativeList({
     meta_title: post.meta_title,
     slug: post.slug,
@@ -408,6 +408,23 @@ export async function pickNextTopic(): Promise<TopicRow | null> {
 
 export function countWords(s: string): number {
   return (s.trim().match(/\S+/g) ?? []).length;
+}
+
+/**
+ * Every text surface of a post that ships, as separate fields for the
+ * field-aware fact guard (2026-09-03). FAQ items are passed as an array so
+ * violations are tagged faq[i]. Shared by the sync drafter, the durable
+ * pipeline's guard step, and the pre-publish gate in commit-post.
+ */
+export function postFactFields(post: Pick<GeneratedPost, 'meta_title' | 'meta_description' | 'h1' | 'summary' | 'body_markdown' | 'faq'>): FactFieldInput {
+  return {
+    meta_title: post.meta_title,
+    meta_description: post.meta_description,
+    h1: post.h1,
+    summary: post.summary,
+    body_markdown: post.body_markdown,
+    faq: (post.faq ?? []).filter((f) => f && f.q && f.a).map((f) => `${f.q} ${f.a}`),
+  };
 }
 
 // Strip any web_search citation markup the drafter may have written into the

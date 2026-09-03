@@ -22,10 +22,11 @@ import {
   lengthProblems,
   insertPendingDraft,
   pickNextTopic,
+  postFactFields,
   type GeneratedPost,
   type TopicRow,
 } from './generate-post';
-import { buildFactsPromptBlock, checkVillaFacts } from '../facts';
+import { buildFactsPromptBlock, checkVillaFactsByField } from '../facts';
 import { buildKeywordPromptBlock, checkNegativeList } from '../keywords';
 import { buildVoicePromptBlock } from '../niche';
 import { getBlogMemoryPromptBlock } from '../voice-memory';
@@ -277,7 +278,9 @@ async function generateDraft(job: JobRow, deadline: number, correction = ''): Pr
 function guardStep(job: JobRow): StepResult {
   const post = job.state.post as GeneratedPost;
   const topic = job.state.topic as TopicRow;
-  const factVerdict = checkVillaFacts(`${post.h1}\n${post.body_markdown}\n${post.faq.map((f) => `${f.q} ${f.a}`).join('\n')}`);
+  // Field-aware since 2026-09-03: FAQ items + meta_title/meta_description/summary are scanned as their
+  // own fields, so a binding in the body can never excuse an unbound claim in a FAQ answer.
+  const factVerdict = checkVillaFactsByField(postFactFields(post));
   const negVerdict = checkNegativeList({
     meta_title: post.meta_title,
     slug: post.slug,

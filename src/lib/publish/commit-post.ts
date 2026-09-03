@@ -15,6 +15,7 @@ import { sendWhatsAppToOwner } from '../unipile';
 import { postUrl, postRepoPath, SITE_ORIGIN } from '../links';
 import { renderPostHtml } from './render-post';
 import { guardContactInfo } from './contact-info-guard';
+import { checkVillaFactsByField } from '../facts';
 import { pickPostImage } from './blog-images';
 import { addUrlToSitemap } from './update-sitemap';
 import { upsertIndexCard } from './update-index';
@@ -168,6 +169,49 @@ export async function publishApprovedDraft(draftId: string): Promise<PublishResu
       console.warn('[commit-post] contact-info-guard auto-fixes:', guardResult.warnings.join('; '));
     }
     const postHtml = guardResult.html; // use auto-fixed version
+
+    // 1c. Pre-publish canonical-fact gate (2026-09-03). Re-check the text that
+    // ACTUALLY ships — edited_content wins over body_markdown, plus the FAQ and
+    // meta fields. The draft-time guard never sees a post-approval edit_post
+    // (8e81fb32 shipped that way). A violation here does NOT retry every 15 min:
+    // the row goes BACK to 'pending' with risk_score=1.0 and a "[pre-publish]"
+    // block_reason so it reappears in v_pending_approvals under the ⚠️ banner
+    // for Rob to fix (edit_post p_new_faq / p_new_text) and re-approve.
+    const factVerdict = checkVillaFactsByField({
+      meta_title: draft.meta_title,
+      meta_description: draft.meta_description,
+      h1: draft.h1,
+      summary: draft.summary ?? '',
+      body_markdown: bodyMarkdown,
+      faq: (draft.faq ?? []).filter((f) => f?.q && f?.a).map((f) => `${f.q} ${f.a}`),
+    });
+    if (factVerdict.flagged) {
+      const reason = `[pre-publish] ${factVerdict.reason}`;
+      const heldAt = new Date().toISOString();
+      // Kill switch (audit 2026-09-03): PREPUBLISH_FACT_GATE=false makes the gate
+      // WARN-ONLY — the post publishes, the violation is recorded on the row and
+      // Rob is notified. Use only for an override or a suspected false positive.
+      if (process.env.PREPUBLISH_FACT_GATE === 'false') {
+        console.warn('[commit-post] pre-publish fact gate in warn-only mode:', reason);
+        await supabase.from('blog_post_drafts').update({ risk_score: 1.0, block_reason: reason }).eq('id', draftId);
+        await safelyNotify(`⚠️ Publishing "${draft.meta_title}" (${slug}) WITH a canonical-fact violation (PREPUBLISH_FACT_GATE=false).\n${factVerdict.reason}`);
+      } else {
+      await supabase
+        .from('blog_post_drafts')
+        .update({ status: 'pending', risk_score: 1.0, block_reason: reason, updated_at: heldAt })
+        .eq('id', draftId)
+        .eq('status', 'publishing');
+      await supabase.from('blog_agent_runs').insert({
+        run_type: 'publish',
+        status: 'partial',
+        error_message: reason.slice(0, 500),
+        metadata: { draft_id: draftId, slug, gate: 'pre-publish-facts' },
+        completed_at: heldAt,
+      });
+      await safelyNotify(`⚠️ Publish HELD for "${draft.meta_title}" (${slug}) — canonical-fact violation in the approved text. Returned to pending for review.\n${factVerdict.reason}`);
+      return { ok: false, draft_id: draftId, error: reason };
+      }
+    }
 
     // 2. Read current index + sitemap + llms.txt (+ IndexNow key file) from the
     //    repo (resolve live, don't guess).
