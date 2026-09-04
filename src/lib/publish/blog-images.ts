@@ -22,15 +22,15 @@ export type BlogImage = { path: string; width: number; height: number; alt: stri
 const IMAGES_BY_CLUSTER: Record<string, BlogImage[]> = {
   stay: [
     { path: '/images/villa-espada-great-room-vaulted-ceiling.jpg', width: 2000, height: 1335, alt: 'Villa Espada great room with vaulted ceiling, Cap Cana' },
-    { path: '/images/villa-espada-pool-villa.jpg', width: 1248, height: 832, alt: 'Villa Espada private pool, Cap Cana' },
+    { path: '/images/villa-espada-pool-villa-2026.jpg', width: 1728, height: 1152, alt: 'Villa Espada rooftop infinity pool and ground-floor pool from above, Cap Cana' },
     { path: '/images/villa-espada-outdoor-lounge.jpg', width: 1600, height: 902, alt: 'Villa Espada outdoor lounge overlooking Punta Espada' },
-    { path: '/images/villa-espada-exterior-front.jpg', width: 1600, height: 774, alt: 'Villa Espada exterior on Fairway 5, Punta Espada' },
+    { path: '/images/villa-espada-aerial-fairway-5-punta-espada-2026.jpg', width: 2000, height: 1125, alt: 'Villa Espada exterior on Fairway 5, Punta Espada' },
   ],
   group_occasion: [
     { path: '/images/villa-espada-great-room-vaulted-ceiling.jpg', width: 2000, height: 1335, alt: 'Villa Espada great room set for a group gathering' },
     { path: '/images/villa-espada-game-room.jpg', width: 1280, height: 612, alt: 'Villa Espada game room' },
     { path: '/images/villa-espada-outdoor-lounge.jpg', width: 1600, height: 902, alt: 'Villa Espada outdoor lounge for groups' },
-    { path: '/images/villa-espada-aerial-fairway-5-punta-espada.jpg', width: 2000, height: 1125, alt: 'Aerial of Villa Espada on Fairway 5, Punta Espada' },
+    { path: '/images/villa-espada-aerial-fairway-5-punta-espada-2026.jpg', width: 2000, height: 1125, alt: 'Aerial of Villa Espada on Fairway 5, Punta Espada' },
   ],
   golf: [
     { path: '/images/Punta_Espada_Golf_Course_3-OK.webp', width: 2048, height: 1396, alt: 'Punta Espada Golf Course, Cap Cana' },
@@ -59,13 +59,13 @@ const IMAGES_BY_CLUSTER: Record<string, BlogImage[]> = {
   ],
   comparison: [
     { path: '/images/01_Cap_Cana_aerial_1.webp', width: 1200, height: 675, alt: 'Cap Cana aerial overview for destination comparison' },
-    { path: '/images/villa-espada-aerial-fairway-5-punta-espada.jpg', width: 2000, height: 1125, alt: 'Villa Espada on Fairway 5, Punta Espada' },
+    { path: '/images/villa-espada-aerial-fairway-5-punta-espada-2026.jpg', width: 2000, height: 1125, alt: 'Villa Espada on Fairway 5, Punta Espada' },
   ],
 };
 
 /** Safe default when a cluster is unknown or has no pool. */
 const DEFAULT_IMAGE: BlogImage = {
-  path: '/images/villa-espada-aerial-fairway-5-punta-espada.jpg',
+  path: '/images/villa-espada-aerial-fairway-5-punta-espada-2026.jpg',
   width: 2000,
   height: 1125,
   alt: 'Villa Espada on Fairway 5 of Punta Espada Golf Course, Cap Cana',
