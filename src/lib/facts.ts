@@ -55,6 +55,7 @@ export const CANONICAL_FACTS = {
     amenities: [
       'private in-house spa, FREE for all guests to use, with two massage beds and indoor + outdoor showers',
       'a TWO-PERSON INFRARED sauna (never "steam sauna" or "four-person")',
+      'a fitness room adjoining the spa, free to use, with yoga mats, an exercise bike, light free weights and a cable weight machine (never "gym", "full gym" or "Technogym" - the Technogym Fitness Center is the Rafa Nadal Tennis Center\'s, not the villa\'s)',
       'two certified in-house masseuses, available daily, $60 per hour, per person — booked through the villa as an add-on (NEVER "included"); a fraction of the $300 or more per hour typical at resort spas',
       'large smart TVs in every bedroom and every living space',
       'whole-house and outdoor Sonos sound system',
