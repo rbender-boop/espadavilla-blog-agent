@@ -218,6 +218,7 @@ ${sources.length ? `\n  <section class="post-sources">\n    <h2>Sources</h2>\n  
   <div class="post-cta">
     <a href="/contact" class="btn btn-gold">Inquire &amp; Book</a>
     <a href="/rates" class="btn btn-gold" style="margin-left:12px;">View Rates</a>
+    <a href="/availability" class="btn btn-outline" style="margin-left:12px;">Check Availability</a>
   </div>
 </main>
 
