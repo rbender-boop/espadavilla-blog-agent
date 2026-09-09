@@ -24,6 +24,8 @@ import { upsertIndexCard } from '../src/lib/publish/update-index';
 import { upsertLlmsEntry } from '../src/lib/publish/update-llms';
 import { addUrlToSitemap } from '../src/lib/publish/update-sitemap';
 import { getFile, commitFiles, type RepoFile } from '../src/lib/publish/github';
+import { preserveSiteBlocks } from '../src/lib/publish/preserve-site-blocks';
+import { articleText, firstDivergence } from '../src/lib/publish/article-text';
 
 const SITEMAP_PATH = 'sitemap.xml';
 const INDEX_PATH = 'blog/index.html';
@@ -92,12 +94,27 @@ async function main() {
     image: heroImage,
   });
 
-  const [indexFile, sitemapFile, llmsFile] = await Promise.all([
+  const [indexFile, sitemapFile, llmsFile, previousPost] = await Promise.all([
     getFile(INDEX_PATH),
     getFile(SITEMAP_PATH),
     getFile(LLMS_PATH),
+    getFile(repoPath),
   ]);
-  const files: RepoFile[] = [{ path: repoPath, content: postHtml }];
+  // Drift guard (HANDOVER-198): if the committed HTML carries hand patches the DB never received, a
+  // re-render would silently revert them. Refuse unless --force is passed.
+  if (previousPost?.content && !process.argv.includes('--force')) {
+    const dbText = articleText(postHtml); const liveText = articleText(previousPost.content);
+    if (dbText !== liveText) {
+      console.error(`DRIFT: committed ${repoPath} differs from the DB render. Sync edited_content first`);
+      console.error(`(bun run scripts/sync-edited-from-live.ts --slug=${slug}) or re-run with --force to overwrite.`);
+      console.error(firstDivergence(dbText, liveText));
+      process.exit(3);
+    }
+  }
+  // Carry the site-injected Popular Tags / Related Stories blocks forward (HANDOVER-198).
+  const preserved = preserveSiteBlocks(previousPost?.content ?? null, postHtml);
+  if (preserved.carried.length) console.log(`Preserved site blocks: ${preserved.carried.join(', ')}`);
+  const files: RepoFile[] = [{ path: repoPath, content: preserved.html }];
 
   // Re-render the index card: remove an existing (possibly stale-dated) card for
   // this slug first, then re-insert with the canonical published date.
