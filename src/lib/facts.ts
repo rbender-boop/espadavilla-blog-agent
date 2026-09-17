@@ -13,7 +13,7 @@
  *   2 half (11 total, not 9.5); pools = two swimming pools (ground-level regular +
  *   rooftop INFINITY on the 2nd-level terrace) + 16-person hot tub — "infinity pool"
  *   IS correct for the rooftop, not a third pool; rates note now carries the explicit
- *   8BR tier ($3,000/$4,500/$8,500) and the 17–22 guest $100/pp/night upcharge;
+ *   8BR tier ($3,000/$4,500/$12,000) and the 17–22 guest $100/pp/night upcharge;
  *   contact via wa.me/17347556357 (raw number kept out of high-harvest targets).
  */
 
@@ -68,15 +68,15 @@ export const CANONICAL_FACTS = {
   rates: {
     low: { usd: 2500, label: 'low', minNights: 4 },
     peak: { usd: 4000, label: 'peak', minNights: 5 },
-    holiday: { usd: 7500, usdMax: 8500, label: 'holiday', minNights: 7 },
-    note: 'Every nightly rate includes full staff, two golf carts, and the Punta Espada member-guest discounted rate (exclusive to Villa Espada renters, arranged through the villa\'s butler via the villa\'s private arrangement; ~$200/golfer/round savings; Punta Espada only, Las Iguanas at regular rates). Holiday/festive rates run $7,500–$8,500 by group size (8-bedroom tier: $3,000 low / $4,500 peak / $8,500 holiday). No 18% DR government tax on the villa rental — not applicable. Base nightly rate covers up to 16 guests; guests 17–22 add $100 per person, per night. F&B billed separately at cost + 15% service.',
+    holiday: { usd: 10000, usdMax: 12000, label: 'holiday', minNights: 7 },
+    note: 'Every nightly rate includes full staff, two golf carts, and the Punta Espada member-guest discounted rate (exclusive to Villa Espada renters, arranged through the villa\'s butler via the villa\'s private arrangement; ~$200/golfer/round savings; Punta Espada only, Las Iguanas at regular rates). Holiday/festive rates run $10,000 (6-bedroom) / $12,000 (8-bedroom) by configuration (8-bedroom tier: $3,000 low / $4,500 peak / $12,000 holiday). No 18% DR government tax on the villa rental — not applicable. Base nightly rate covers up to 16 guests; guests 17–22 add $100 per person, per night. F&B billed separately at cost + 15% service.',
   },
   golf: {
     puntaEspada:
-      'Punta Espada: Jack Nicklaus Signature, par 72, opened 2006. Ranked #1 in the Caribbean and Mexico by GolfWeek for eight consecutive years; #57 on Golf Digest\'s World\'s 100 Greatest 2026-27 (always cite publication + edition; never a bare present-tense #1; never mix GolfWeek/Golf Digest lists). Hosted the PGA Champions Tour Cap Cana Championship 2008–2010 (Fred Couples won the 2010 finale). Signature hole: No. 13, a ~250-yard par-3 over the Caribbean Sea.',
+      'Punta Espada: Jack Nicklaus Signature, par 72, opened 2006. Ranked #1 in the Caribbean and Mexico by GolfWeek for eight consecutive years; #57 on Golf Digest\'s World\'s 100 Greatest 2026-27 (always cite publication + edition; never a bare present-tense #1; never mix GolfWeek/Golf Digest lists). Hosted the PGA Champions Tour Cap Cana Championship 2008–2010 (Fred Couples won the 2010 finale). Signature hole: No. 13, a ~250-yard par-3 over the Caribbean Sea. Public 2026-27 green fees: $550 morning / $440 afternoon in peak season (Nov 1-Apr 30); $495 morning / $395 afternoon in summer (Jul 22-Oct 31).',
     lasIguanas:
-      'Las Iguanas: second Nicklaus Signature course at Cap Cana. Front nine open now; the back nine (including the oceanside holes 12-14) is still under construction, with the full 18 completing by the end of 2026 and the official opening in spring 2027. Designed as 18 holes with 3 oceanside holes and 10 inland lakes; ~2 min by golf cart to its clubhouse. NEVER state it opened as a full 18 in November 2025, that it is "now open" / "brand-new," or that the oceanside holes are currently playable.',
-    summary: 'Two Jack Nicklaus Signature courses inside Cap Cana: Punta Espada (open) and Las Iguanas (front nine open now; full 18 by the end of 2026). "36 holes" is accurate only once Las Iguanas completes; phrase as "two Nicklaus courses," never "36 holes available now."',
+      'Las Iguanas: second Nicklaus Signature course at Cap Cana. Nine holes open now, including oceanside holes on the back nine; the full 18 completes by the end of 2026, with the official opening in spring 2027. Designed as 18 holes with 3 oceanside holes and 10 inland lakes; ~2 min by golf cart to its clubhouse. NEVER state it opened as a full 18 in November 2025, that it is fully open / "brand-new," or that all 18 holes are currently playable.',
+    summary: 'Two Jack Nicklaus Signature courses inside Cap Cana: Punta Espada (open) and Las Iguanas (nine holes open now, including oceanside holes on the back nine; full 18 by the end of 2026). "36 holes" is accurate only once Las Iguanas completes; phrase as "two Nicklaus courses," never "36 holes available now."',
     nearby:
       'Nearby: Corales (Tom Fazio, PGA Tour Corales Puntacana Championship), La Cana (P.B. Dye, 27 holes), Teeth of the Dog (Pete Dye, Casa de Campo, ~1 hr west).',
   },
@@ -132,7 +132,7 @@ export function buildFactsPromptBlock(): string {
     '- CANONICAL-ONLY: if a villa or golf fact is not in the blocks above, a FAQ answer OMITS it rather than filling the gap from general knowledge.',
     '- GolfWeek: every #1 claim reads "#1 in the Caribbean and Mexico by GolfWeek for eight consecutive years" — the binding in the SAME sentence as the claim. Never an unbound "#1", never "top-10 world-ranked" or any "top-N in the world" phrasing, never Golf Digest or Golf Magazine as the #1 source. Golf Digest appears only as "#57 on Golf Digest\'s World\'s 100 Greatest 2026-27".',
     '- Member-guest rate: always described as arranged through the villa\'s butler (the body and the FAQ must each say so at least once when they mention it); Punta Espada ONLY; Las Iguanas is played at regular rates; never "reserved for Cap Cana property owners".',
-    '- Rates: only $2,500 low / $4,000 peak / $7,500–$8,500 holiday (8-bedroom tier $3,000 / $4,500 / $8,500) plus the $100 per person, per night upcharge for guests 17–22. Never a composite or blended "nightly rate" such as $4,400 or $4,600.',
+    '- Rates: only $2,500 low / $4,000 peak / $10,000 / $12,000 holiday (8-bedroom tier $3,000 / $4,500 / $12,000) plus the $100 per person, per night upcharge for guests 17–22. Never a composite or blended "nightly rate" such as $4,400 or $4,600.',
     '- Bedrooms: "6-or-8 bedroom" (or "6 or 8 bedrooms") — never "8-bedroom" alone in a FAQ answer, title, or description without the 6-bedroom option in the same field. 6-bedroom sleeps up to 16; full 8-bedroom estate up to 22 — never "22 guests in either configuration".',
     '- Water: the Caribbean Sea — never the Atlantic. Punta Espada has 8 ocean holes (never 9).',
     '- Food: "at cost plus a 15% service charge, with no restaurant markup" — this exact phrase, in FAQ answers too.',
@@ -167,12 +167,12 @@ const ALLOWED = {
   bathrooms: new Set<number>([CANONICAL_FACTS.villa.bathroomsTotal]),  // 11 only — 9.5 dropped (owner correction 2026-08-16)
   guests: new Set<number>([CANONICAL_FACTS.villa.maxGuests]),
   // Nightly rate figures that may legitimately appear next to "night/nightly"
-  // (holiday is a $7,500–$8,500 range by group size).
+  // (holiday is $10,000 6BR / $12,000 8BR by configuration).
   rates: new Set<number>([
     CANONICAL_FACTS.rates.low.usd,        // 2500 (6BR low)
     CANONICAL_FACTS.rates.peak.usd,       // 4000 (6BR peak)
-    CANONICAL_FACTS.rates.holiday.usd,    // 7500 (6BR holiday)
-    CANONICAL_FACTS.rates.holiday.usdMax, // 8500 (8BR holiday)
+    CANONICAL_FACTS.rates.holiday.usd,    // 10000 (6BR holiday)
+    CANONICAL_FACTS.rates.holiday.usdMax, // 12000 (8BR holiday)
     3000, // 8BR low
     4500, // 8BR peak
   ]),
@@ -334,7 +334,7 @@ function collectViolations(text: string, opts: { skipFieldLevel?: boolean; skipB
   }
 
   // Golf-fact canonical checks (added 2026-08-26): Las Iguanas is a phased opening —
-  // front nine open now, full 18 (incl. oceanside holes 12–14) by end of 2026, official
+  // nine holes open now (incl. oceanside holes on the back nine), full 18 by end of 2026, official
   // opening spring 2027. Punta Espada's GolfWeek #1 must be bound to "eight consecutive years".
   const BAD_GOLF_PHRASES = [
     '36 holes of nicklaus golf available',
@@ -344,7 +344,7 @@ function collectViolations(text: string, opts: { skipFieldLevel?: boolean; skipB
   ];
   for (const phrase of BAD_GOLF_PHRASES) {
     if (t.includes(phrase)) {
-      violations.push(`banned golf phrase "${phrase}" — Las Iguanas is phased (front nine open; full 18 by end 2026); use "two Nicklaus courses"`);
+      violations.push(`banned golf phrase "${phrase}" — Las Iguanas is phased (nine holes open; full 18 by end 2026); use "two Nicklaus courses"`);
     }
   }
   // Las Iguanas open-status overstatement (co-occurrence within ~200 chars of "las iguanas")
@@ -353,7 +353,7 @@ function collectViolations(text: string, opts: { skipFieldLevel?: boolean; skipB
     for (const b of ['now open', 'opened in november 2025', 'opened november 2025', 'fully open', 'brand-new', 'brand new', 'grand opening']) {
       const bi = t.indexOf(b);
       if (bi !== -1 && Math.abs(bi - liIdx) < 200) {
-        violations.push(`Las Iguanas overstatement "${b}" — front nine open now; full 18 by end 2026, official opening spring 2027`);
+        violations.push(`Las Iguanas overstatement "${b}" — nine holes open now; full 18 by end 2026, official opening spring 2027`);
         break;
       }
     }
@@ -443,7 +443,7 @@ function collectViolations(text: string, opts: { skipFieldLevel?: boolean; skipB
     if (!/punta espada/.test(ctx) || /corales|las iguanas|teeth of the dog|casa de campo|la cana/.test(ctx)) continue;
     if (n !== 8) { violations.push(`claims ${n} ocean holes at Punta Espada (canonical: 8 ocean holes on the Caribbean Sea)`); break; }
   }
-  // "36 holes of Nicklaus golf" stated as currently available (phased: front nine only)
+  // "36 holes of Nicklaus golf" stated as currently available (phased: nine holes open)
   for (const m of t.matchAll(/36[\s-]?holes?\s+of\s+(?:jack\s+)?nicklaus[^.]{0,90}/g)) {
     if (!/once|by (?:the )?end|completes?|complet(?:e|ing)|two nicklaus courses/.test(m[0])) {
       violations.push('claims "36 holes of Nicklaus golf" as currently available — Las Iguanas is phased; use "two Nicklaus courses"');
