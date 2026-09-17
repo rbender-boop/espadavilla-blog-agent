@@ -70,9 +70,17 @@ Both `src/lib/facts.ts` (espadavilla-blog-agent + golfvilla-blog-agent), identic
 - 0 residual "front nine" / 7500 / 8500 in either file.
 
 ## Open items
-1. **Golfvilla LIVE pages carry the outdated "front nine" wording** — inserted by the 9/8
-   (luxury-golf-villas refresh) and 9/14 (Corales 2027 refresh) edits per the then-canon.
-   Needs the same nine-holes correction on golfvilla.com pages + golfvilla DB rows. Not done.
+1. **DONE (same session)** — golfvilla "front nine" correction. Repo `golfvilla-com` (checkout:
+   `C:\Users\rbend\Desktop\Claude Projects\GOLFVILLA-WEBSITE\Funnel Websites\golfvilla-com`):
+   11 replacements across 4 posts — corales-puntacana-championship (3 Las Iguanas status lines),
+   luxury-golf-villas-vs-resort-blocks (3), where-can-i-rent-a-villa (1, incl. dropping
+   "opened its front nine in November 2025"), cap-cana-golf-packages (3 Punta Espada maintenance
+   dates made annual-evergreen). Left alone: "walk at least the front nine" (course walking) and
+   the Punta Espada front/back-nine layout description — legitimate uses.
+   Golfvilla DB (genidekhqwsxvsboyrih): 5 rows fixed (published corales + packages; skipped
+   luxury redraft, best-caribbean-golf-villas, villa-in-golf-community). Verified: 0 rows pair
+   "front nine" with Las Iguanas status language. punta-espada-golf-villa-guide's walking
+   reference untouched.
 2. Sept 2 PR says "front nine is open now" — syndicated copies can't be edited; future PRs
    should use the corrected phrasing.
 3. docs/cowork-approval-prompt.md in both repos still empty (pre-existing, from 9/14).
