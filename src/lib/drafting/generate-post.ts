@@ -7,7 +7,7 @@
  * 'pending' draft to blog_post_drafts. Mirrors the LinkedIn drafter's retry-on-
  * malformed-JSON discipline and anti-fabrication backstop.
  *
- * Model pinned to claude-sonnet-4-5-20250929 (no version drift).
+ * Model pinned to claude-opus-5-5 (no version drift).
  */
 
 import Anthropic from '@anthropic-ai/sdk';
@@ -18,7 +18,7 @@ import { buildVoicePromptBlock } from '../niche';
 import { getBlogMemoryPromptBlock } from '../voice-memory';
 import { resolveMoneyLinks } from '../links';
 
-export const MODEL = 'claude-sonnet-4-5-20250929';
+export const MODEL = 'claude-opus-5-5';
 export const MAX_TITLE = 60;
 export const MAX_DESC = 155;
 export const MIN_WORDS = 1200;

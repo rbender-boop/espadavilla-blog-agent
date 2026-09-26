@@ -7,7 +7,7 @@
  * patterns. New patterns are written to blog_voice_memories, which the drafter
  * injects into its system prompt — so Rob's edits teach the voice over time.
  *
- * Model pinned to claude-sonnet-4-5-20250929 (no version drift).
+ * Model pinned to claude-opus-5-5 (no version drift).
  * Fail-soft: any failure logs and returns a benign result; never throws into
  * the cron in a way that loses the run.
  */
@@ -16,7 +16,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { supabase } from '../supabase';
 import { insertVoiceMemory, retrieveVoiceMemories } from '../voice-memory';
 
-const MODEL = 'claude-sonnet-4-5-20250929';
+const MODEL = 'claude-opus-5-5';
 const LOOKBACK_DAYS = 30;
 const CORPUS_CAP = 30;
 
