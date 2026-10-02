@@ -75,10 +75,10 @@ export const CANONICAL_FACTS = {
     puntaEspada:
       'Punta Espada: Jack Nicklaus Signature, par 72, opened 2006. Ranked #1 in the Caribbean and Mexico by GolfWeek for eight consecutive years; #57 on Golf Digest\'s World\'s 100 Greatest 2026-27 (always cite publication + edition; never a bare present-tense #1; never mix GolfWeek/Golf Digest lists). Hosted the PGA Champions Tour Cap Cana Championship 2008–2010 (Fred Couples won the 2010 finale). Signature hole: No. 13, a ~250-yard par-3 over the Caribbean Sea. Public 2026-27 green fees: $550 morning / $440 afternoon in peak season (Nov 1-Apr 30); $495 morning / $395 afternoon in summer (Jul 22-Oct 31).',
     lasIguanas:
-      'Las Iguanas: second Nicklaus Signature course at Cap Cana. Nine holes open now, including oceanside holes on the back nine; the full 18 completes by the end of 2026, with the official opening in spring 2027. Designed as 18 holes with 3 oceanside holes and 10 inland lakes; ~2 min by golf cart to its clubhouse. NEVER state it opened as a full 18 in November 2025, that it is fully open / "brand-new," or that all 18 holes are currently playable.',
-    summary: 'Two Jack Nicklaus Signature courses inside Cap Cana: Punta Espada (open) and Las Iguanas (nine holes open now, including oceanside holes on the back nine; full 18 by the end of 2026). "36 holes" is accurate only once Las Iguanas completes; phrase as "two Nicklaus courses," never "36 holes available now."',
+      'Las Iguanas: second Nicklaus Signature course at Cap Cana. The back nine is open now, including the oceanside holes; the front nine is expected around spring 2027 (no official date announced). Designed as 18 holes with oceanside holes on the back nine and 10 inland lakes; villa guests book the open back nine through the villa at regular rates; ~2 min by golf cart to its clubhouse. NEVER state it opened as a full 18 in November 2025, that it is fully open / "brand-new," or that all 18 holes are currently playable.',
+    summary: 'Two Jack Nicklaus Signature courses inside Cap Cana: Punta Espada (open) and Las Iguanas (the back nine open now, including the oceanside holes; front nine expected around spring 2027). "36 holes" is accurate only once Las Iguanas completes; phrase as "two Nicklaus courses," never "36 holes available now."',
     nearby:
-      'Nearby: Corales (Tom Fazio, PGA Tour Corales Puntacana Championship), La Cana (P.B. Dye, 27 holes), Teeth of the Dog (Pete Dye, Casa de Campo, ~1 hr west).',
+      'Nearby: Corales (Tom Fazio, PGA Tour Corales Puntacana Championship), La Cana (P.B. Dye, 27 holes), Teeth of the Dog (Pete Dye, Casa de Campo, about 90 minutes west).',
   },
   entities: {
     villaEspada: 'the private rental villa, offered as EITHER a 6-bedroom OR 8-bedroom configuration (guest\'s choice), sleeping up to 16 guests as a 6-bedroom and up to 22 guests as the full 8-bedroom estate (NOT a hotel or resort)',
@@ -334,8 +334,8 @@ function collectViolations(text: string, opts: { skipFieldLevel?: boolean; skipB
   }
 
   // Golf-fact canonical checks (added 2026-08-26): Las Iguanas is a phased opening —
-  // nine holes open now (incl. oceanside holes on the back nine), full 18 by end of 2026, official
-  // opening spring 2027. Punta Espada's GolfWeek #1 must be bound to "eight consecutive years".
+  // OWNER-CONFIRMED 2026-10-01: the BACK NINE is open now (incl. the oceanside holes); the front
+  // nine is expected around spring 2027 (no official date). Punta Espada's GolfWeek #1 must be bound to "eight consecutive years".
   const BAD_GOLF_PHRASES = [
     '36 holes of nicklaus golf available',
     '36 holes available without leaving',
@@ -344,7 +344,7 @@ function collectViolations(text: string, opts: { skipFieldLevel?: boolean; skipB
   ];
   for (const phrase of BAD_GOLF_PHRASES) {
     if (t.includes(phrase)) {
-      violations.push(`banned golf phrase "${phrase}" — Las Iguanas is phased (nine holes open; full 18 by end 2026); use "two Nicklaus courses"`);
+      violations.push(`banned golf phrase "${phrase}" — Las Iguanas is phased (back nine open; front nine expected ~spring 2027); use "two Nicklaus courses"`);
     }
   }
   // Las Iguanas open-status overstatement (co-occurrence within ~200 chars of "las iguanas")
@@ -353,8 +353,16 @@ function collectViolations(text: string, opts: { skipFieldLevel?: boolean; skipB
     for (const b of ['now open', 'opened in november 2025', 'opened november 2025', 'fully open', 'brand-new', 'brand new', 'grand opening']) {
       const bi = t.indexOf(b);
       if (bi !== -1 && Math.abs(bi - liIdx) < 200) {
-        violations.push(`Las Iguanas overstatement "${b}" — nine holes open now; full 18 by end 2026, official opening spring 2027`);
+        violations.push(`Las Iguanas overstatement "${b}" — back nine open now; front nine expected ~spring 2027 (no official date)`);
         break;
+      }
+    }
+    // Las Iguanas status errors (OWNER-CONFIRMED 2026-10-01): the open nine is the BACK nine;
+    // hole numbers for the ocean holes are unconfirmed; no "end of 2026"; spring 2027 is not official.
+    for (const rx of [/front nine (?:is |are )?open/, /holes? 12\s*(?:-|–|,|to)\s*1[34]/, /12, 13,? and 14/, /(?:18|complet\w*|finish\w*)[^.]{0,40}end of 2026/, /official(?:ly)? open(?:ing|s)? (?:in )?spring 2027/, /three ocean(?:side)? holes/]) {
+      const m = rx.exec(t);
+      if (m && Math.abs(m.index - liIdx) < 400) {
+        violations.push(`Las Iguanas status error "${m[0]}" — canonical: back nine open now incl. oceanside holes; front nine expected around spring 2027, no official date`);
       }
     }
   }
