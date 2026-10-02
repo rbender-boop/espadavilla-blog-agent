@@ -259,18 +259,24 @@ async function generateDraft(job: JobRow, deadline: number, correction = ''): Pr
   const system = buildDraftSystemPrompt(memoryBlock);
   const user = buildDraftUserPrompt(topic, moneyLinks, research, overlap, refreshContext) + correction;
 
-  const res = await callModel(
-    {
-      model: MODEL,
-      max_tokens: 8000,
-      system,
-      messages: [{ role: 'user', content: user }],
-      tools: [POST_TOOL] as unknown as Anthropic.Tool[],
-      tool_choice: { type: 'tool', name: 'emit_post' },
-    },
-    deadline,
-  );
-  const emitted = toolInput(res, 'emit_post');
+  // claude-opus-5-5 rejects forced tool_choice ('tool'/'any') with a 400, so use 'auto'
+  // plus an explicit instruction, and retry once with a firmer nudge if no tool call comes back.
+  const EMIT_INSTRUCTION = '\n\nReturn the finished post by calling the emit_post tool. Do not reply in plain text.';
+  const draftRequest = (extra: string) => ({
+    model: MODEL,
+    max_tokens: 8000,
+    system,
+    messages: [{ role: 'user' as const, content: user + EMIT_INSTRUCTION + extra }],
+    tools: [POST_TOOL] as unknown as Anthropic.Tool[],
+    tool_choice: { type: 'auto' as const },
+  });
+  let res = await callModel(draftRequest(''), deadline);
+  let emitted = toolInput(res, 'emit_post');
+  if (!emitted) {
+    console.warn('[pipeline] draft: no emit_post call on first attempt, retrying once');
+    res = await callModel(draftRequest('\n\nIMPORTANT: your previous attempt did not call emit_post. Call emit_post now with the complete post.'), deadline);
+    emitted = toolInput(res, 'emit_post');
+  }
   if (!emitted) throw new Error('draft step produced no post');
   return normalizePost(emitted as Partial<GeneratedPost>);
 }

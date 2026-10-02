@@ -82,7 +82,7 @@ export async function humanizeBody(body: string, call: HumanizeCall): Promise<Hu
         content: 'Humanize this blog body. Keep every heading and link, add no facts, stay in the same voice:\n\n' + body,
       }],
       tools: [HUMANIZE_TOOL] as unknown as Anthropic.Tool[],
-      tool_choice: { type: 'tool', name: 'emit_humanized' },
+      tool_choice: { type: 'auto' }, // claude-opus-5-5 rejects forced tool_choice; rule 7 in the system prompt requires emit_humanized
     });
 
     const block = res.content.find(
