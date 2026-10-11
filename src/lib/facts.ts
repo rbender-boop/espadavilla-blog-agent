@@ -39,7 +39,7 @@ export const CANONICAL_FACTS = {
     address: 'Cayuco, Cap Cana, Punta Cana, La Altagracia, Dominican Republic',
     coordinates: { lat: 18.46165473258522, lng: -68.41100413285815 },
     distinction: 'Only private rental estate in Cap Cana with a direct fairway address.',
-    distances: 'Punta Espada clubhouse is about 3 minutes by golf cart from the villa (never "steps away", "90 seconds", or "2 minutes"); the Las Iguanas clubhouse is about 2 minutes by golf cart.',
+    distances: 'Punta Espada clubhouse is about 5 minutes by golf cart from the villa (never "steps away", "90 seconds", "2 minutes" or "3 minutes"); the Las Iguanas clubhouse is about 2 minutes by golf cart.',
     included: [
       'private executive chef',
       'butler (also the dedicated villa manager)',
