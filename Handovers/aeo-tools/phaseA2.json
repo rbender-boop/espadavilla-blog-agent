@@ -1,0 +1,3 @@
+{"date": "2026-10-11", "bump": false, "rules": [
+{"files": ["blog/golf-course-cap-cana-transportation-villa-espada-playbook.html"], "old": "Las Iguanas by cart in three minutes or less", "new": "Las Iguanas by cart in five minutes or less", "regex": false, "expect": 2}
+]}
