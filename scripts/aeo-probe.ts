@@ -80,17 +80,25 @@ const STRATEGIC: PromptDef[] = [
   { text: 'Is Villa Espada in Cap Cana worth it — what do guests say?',             type: 'strategic', branded: true,  cluster: 'branded_reputation',     fit: 'should_win' },
 ];
 
-type EngineCfg = { live: string; models: string; model: string | null; geo: boolean };
+// 2026-10-11: models PINNED (auto-discovery silently switched Claude from claude-sonnet-5 to
+// claude-sonnet-5-5 between the Sep and Oct scans, which breaks month-over-month comparison).
+// Change a pin only on purpose, and note the change in the monthly review as a model break.
+// maxTokens per engine: Claude and Perplexity spend output tokens on web-search tool use /
+// reasoning; at 1024 they returned only a preamble ("I'll search for...") or empty text.
+type EngineCfg = { live: string; models: string; model: string | null; geo: boolean; maxTokens: number };
 const ENGINES: Record<string, EngineCfg> = {
-  chatgpt:    { live: '/v3/ai_optimization/chat_gpt/llm_responses/live',   models: '/v3/ai_optimization/chat_gpt/llm_responses/models',   model: 'gpt-4o', geo: true },
-  claude:     { live: '/v3/ai_optimization/claude/llm_responses/live',     models: '/v3/ai_optimization/claude/llm_responses/models',     model: null, geo: false },
-  gemini:     { live: '/v3/ai_optimization/gemini/llm_responses/live',     models: '/v3/ai_optimization/gemini/llm_responses/models',     model: null, geo: false },
-  perplexity: { live: '/v3/ai_optimization/perplexity/llm_responses/live', models: '/v3/ai_optimization/perplexity/llm_responses/models', model: null, geo: true },
+  chatgpt:    { live: '/v3/ai_optimization/chat_gpt/llm_responses/live',   models: '/v3/ai_optimization/chat_gpt/llm_responses/models',   model: 'gpt-4o',              geo: true,  maxTokens: 1024 },
+  claude:     { live: '/v3/ai_optimization/claude/llm_responses/live',     models: '/v3/ai_optimization/claude/llm_responses/models',     model: 'claude-sonnet-5-5',   geo: false, maxTokens: 4096 },
+  gemini:     { live: '/v3/ai_optimization/gemini/llm_responses/live',     models: '/v3/ai_optimization/gemini/llm_responses/models',     model: 'gemini-3.8-flash',    geo: false, maxTokens: 1024 },
+  perplexity: { live: '/v3/ai_optimization/perplexity/llm_responses/live', models: '/v3/ai_optimization/perplexity/llm_responses/models', model: 'sonar-reasoning-pro', geo: true,  maxTokens: 1024 }, // Sep scan had 19 empty answers; Oct had 0 — kept at 1024 for comparability, truncation retry covers it
 };
 
 let WEB_SEARCH = true;
 const SEARCH_COUNTRY_ISO = 'US';
-const MAX_OUTPUT_TOKENS = 1024;
+// Answers shorter than this, or flagged "interrupted" by the API, are treated as TRUNCATED:
+// retried once at 2x tokens, then recorded with error='TRUNCATED…' so KPI queries
+// (error is null) exclude them instead of counting them as "not mentioned".
+const MIN_ANSWER_CHARS = 200;
 const REQUEST_TIMEOUT_MS = 130_000;
 const RETRIES = 2;
 
@@ -196,6 +204,32 @@ function registrable(url: string): string {
   }
 }
 
+// Gemini returns grounding citations as opaque Google redirect URLs
+// (vertexaisearch.cloud.google.com/grounding-api-redirect/...) with the real source domain in
+// `title` (e.g. "espadavilla.com"). Before 2026-10-11 the probe read only the URL host, so
+// Gemini could never register a citation. Use the title when the URL is a redirect.
+const REDIRECT_HOSTS = ['vertexaisearch.cloud.google.com'];
+const DOMAIN_RE = /^[a-z0-9-]+(\.[a-z0-9-]+)+$/i;
+
+function citationDomain(c: Citation): string {
+  const host = registrable(c.url);
+  if (REDIRECT_HOSTS.includes(host)) {
+    const t = (c.title ?? '').trim().toLowerCase().replace(/^www\./, '');
+    return DOMAIN_RE.test(t) ? t : '';
+  }
+  return host;
+}
+
+function isTruncated(resultItem: any, answer: string): boolean {
+  if (answer.trim().length < MIN_ANSWER_CHARS) return true;
+  for (const item of resultItem?.items ?? []) {
+    for (const sec of item?.sections ?? []) {
+      if (typeof sec?.text === 'string' && /interrupted before it finished/i.test(sec.text)) return true;
+    }
+  }
+  return false;
+}
+
 function extractAnswerAndCitations(resultItem: any): { answer: string; citations: Citation[] } {
   const textParts: string[] = [];
   const citations: Citation[] = [];
@@ -222,7 +256,7 @@ type Signals = {
 
 function analyze(answerText: string, citations: Citation[]): Signals {
   const text = (answerText || '').toLowerCase();
-  const citedDomains = citations.map((c) => registrable(c.url)).filter(Boolean);
+  const citedDomains = citations.map(citationDomain).filter(Boolean);
   const domainHit = (domains: string[]) =>
     domains.some((d) => citedDomains.some((cd) => cd === d || cd.endsWith('.' + d)));
   const compCited: string[] = [];
@@ -249,22 +283,32 @@ async function runOne(engine: string, prompt: string): Promise<RunResult> {
   const cfg = ENGINES[engine];
   if (!cfg) throw new Error(`unknown engine: ${engine}`);
   const model = await discoverModel(engine);
-  const task: Record<string, unknown> = {
-    user_prompt: prompt.slice(0, 500),
-    model_name: model,
-    max_output_tokens: MAX_OUTPUT_TOKENS,
-    web_search: WEB_SEARCH,
-    tag: `${engine}|${prompt.slice(0, 40)}`,
-  };
-  if (WEB_SEARCH && cfg.geo && SEARCH_COUNTRY_ISO) task.web_search_country_iso_code = SEARCH_COUNTRY_ISO;
+  let cost = 0;
+  // Attempt 1 at the engine's maxTokens; if truncated, one retry at 2x. Still truncated -> throw,
+  // so the row is stored with error='TRUNCATED…' and excluded from KPIs (never a false "miss").
+  for (const tokens of [cfg.maxTokens, cfg.maxTokens * 2]) {
+    const task: Record<string, unknown> = {
+      user_prompt: prompt.slice(0, 500),
+      model_name: model,
+      max_output_tokens: tokens,
+      web_search: WEB_SEARCH,
+      tag: `${engine}|${prompt.slice(0, 40)}`,
+    };
+    if (WEB_SEARCH && cfg.geo && SEARCH_COUNTRY_ISO) task.web_search_country_iso_code = SEARCH_COUNTRY_ISO;
 
-  const data = await request('POST', cfg.live, [task]);
-  if (data?.status_code !== 20000) throw new Error(`API error ${data?.status_code}: ${data?.status_message}`);
-  const t = (data.tasks ?? [])[0];
-  if (!t || t.status_code !== 20000) throw new Error(`task error: ${t?.status_message ?? 'no task returned'}`);
-  const result = (t.result ?? [])[0];
-  const { answer, citations } = result ? extractAnswerAndCitations(result) : { answer: '', citations: [] };
-  return { engine, model, prompt, cost: Number(t.cost ?? 0), answer, citations, signals: analyze(answer, citations) };
+    const data = await request('POST', cfg.live, [task]);
+    if (data?.status_code !== 20000) throw new Error(`API error ${data?.status_code}: ${data?.status_message}`);
+    const t = (data.tasks ?? [])[0];
+    if (!t || t.status_code !== 20000) throw new Error(`task error: ${t?.status_message ?? 'no task returned'}`);
+    cost += Number(t.cost ?? 0);
+    const result = (t.result ?? [])[0];
+    const { answer, citations } = result ? extractAnswerAndCitations(result) : { answer: '', citations: [] };
+    if (!isTruncated(result, answer)) {
+      return { engine, model, prompt, cost, answer, citations, signals: analyze(answer, citations) };
+    }
+    console.log(`   ↻ truncated at max_output_tokens=${tokens} (${answer.trim().length} chars)`);
+  }
+  throw new Error(`TRUNCATED: answer incomplete after retry at ${cfg.maxTokens * 2} tokens (cost $${cost.toFixed(4)})`);
 }
 
 // ----------------------------- Supabase persistence --------------------------
