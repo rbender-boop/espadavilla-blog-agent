@@ -130,6 +130,7 @@ export function buildFactsPromptBlock(): string {
     '# FAQ / META / SUMMARY BINDING (HARD — added 2026-09-03)',
     '- The `faq` array (every q AND every a), `meta_title`, `meta_description`, `summary`, and `h1` are bound to the VILLA FACTS and GOLF FACTS above EXACTLY like body_markdown. The same guard scans each of these fields separately and names the field it fails in.',
     '- CANONICAL-ONLY: if a villa or golf fact is not in the blocks above, a FAQ answer OMITS it rather than filling the gap from general knowledge.',
+    '- Transport: never state taxi, shuttle, Uber or ride-share fares (they go stale). The private airport transfer is included; for any extra trips, the butler arranges a trusted driver.',
     '- GolfWeek: every #1 claim reads "#1 in the Caribbean and Mexico by GolfWeek for eight consecutive years" — the binding in the SAME sentence as the claim. Never an unbound "#1", never "top-10 world-ranked" or any "top-N in the world" phrasing, never Golf Digest or Golf Magazine as the #1 source. Golf Digest appears only as "#57 on Golf Digest\'s World\'s 100 Greatest 2026-27".',
     '- Member-guest rate: always described as arranged through the villa\'s butler (the body and the FAQ must each say so at least once when they mention it); Punta Espada ONLY; Las Iguanas is played at regular rates; never "reserved for Cap Cana property owners".',
     '- Rates: only $2,500 low / $4,000 peak / $10,000 / $12,000 holiday (8-bedroom tier $3,000 / $4,500 / $12,000) plus the $100 per person, per night upcharge for guests 17–22. Never a composite or blended "nightly rate" such as $4,400 or $4,600.',
@@ -331,6 +332,13 @@ function collectViolations(text: string, opts: { skipFieldLevel?: boolean; skipB
   // Also catch bare "food billed at cost" or "billed at cost" (food context) without the 15%
   if (/(?:food|groceries|f&b|meals|beverage)[\w\s,]+billed at cost(?! plus a 15)/.test(t)) {
     violations.push('food billed at cost without 15% service charge — use canonical phrasing');
+  }
+
+  // Ground-transport fares (added 2026-10-12, owner decision): never state taxi, shuttle or
+  // ride-share prices — they go stale and conflict across pages. Say the butler arranges a trusted driver.
+  for (const m of t.matchAll(/\b(?:taxis?|cabs?|uber|lyft|ride-?share|shuttles?)\b[^.\n]{0,80}\$\s?\d|\$\s?\d[^.\n]{0,60}\b(?:taxis?|cab ride|uber|lyft|shuttles?)\b/g)) {
+    violations.push(`states a taxi/shuttle/ride-share fare ("${m[0].slice(0, 70)}") — remove the number; say the butler arranges a trusted driver`);
+    break;
   }
 
   // Golf-fact canonical checks (added 2026-08-26): Las Iguanas is a phased opening —

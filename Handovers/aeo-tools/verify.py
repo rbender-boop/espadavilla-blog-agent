@@ -5,7 +5,7 @@ bad = 0
 for rel in sys.argv[1:]:
     t = (ROOT / rel).read_bytes().decode("utf-8")
     body = t.split("</head>", 1)[-1]
-    vis = html.unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", re.sub(r"<script.*?</script>", " ", body, flags=re.S))))
+    vis = html.unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", re.sub(r"</?(a|strong|em|b|i|span)\b[^>]*>", "", re.sub(r"<script.*?</script>", " ", body, flags=re.S)))))
     vis_n = re.sub(r"\s+", " ", vis).replace("’", "'")
     blocks = re.findall(r'<script type="application/ld\+json">(.*?)</script>', t, re.S)
     nq = 0; miss = []
