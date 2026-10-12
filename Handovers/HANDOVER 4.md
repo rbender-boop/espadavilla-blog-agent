@@ -28,7 +28,7 @@ Edit tools: `Handovers\aeo-tools\` (verify.py now ignores inline tags, so no mor
 | espadavilla-blog-agent | 7456fee, 6e62c39 | facts.ts same taxi-fare guard; verify.py inline-tag fix; new `scripts/gsc-index-status.ts` (resumable URL Inspection per sitemap URL) |
 
 - `sameAs` now: YouTube @espadavillacapcana, https://www.puntaespadavilla.com/ (same villa, separate site), Google KG /g/11npbfm9tr, wa.me. OTA links deliberately left out (site says no third-party platform).
-- IndexNow: 45 changed URLs submitted (HTTP 200) after 7bec24da. **Watch pages (79ece139) NOT yet submitted** — run `python -X utf8 Handovers\aeo-tools\indexnow.py db862e55 HEAD submit`.
+- IndexNow: 45 changed URLs submitted after 7bec24da, plus 15 (watch pages + host pages) after 79ece139 — both HTTP 200.
 - J5 done for golfvilla (`--dry` OK). Espadavilla `--dry` also ran OK 10/12.
 
 ## Database changes (run directly via Supabase MCP)
