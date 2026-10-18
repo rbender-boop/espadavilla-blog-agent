@@ -12,13 +12,11 @@
  *  1. reservations@espadavilla.com — dead address, must not exist anywhere.
  *  2. rob@espadavilla.com outside <script type="application/ld+json"> — email
  *     is only valid in schema; never in visible body, footer, or CTA text.
- *  3. tel: link containing the banned phone number 7347556357.
- *  4. Raw phone number 7347556357 in visible text outside href/script context.
+ *  3. Rob's personal phone number 734-755-6357 in ANY format, anywhere in the
+ *     HTML — visible text, tel: or wa.me hrefs, or JSON-LD (removed 2026-10-18).
  *
  * ALWAYS ALLOWED (never flagged):
- *  - https://wa.me/17347556357  (WhatsApp CTA — preferred gated channel).
  *  - rob@espadavilla.com inside JSON-LD <script> blocks.
- *  - Phone in href="https://wa.me/..." or inside ld+json blocks.
  */
 
 export type GuardResult =
@@ -29,12 +27,6 @@ export type GuardResult =
  * remaining HTML can be inspected for visible-content violations only. */
 function stripJsonLdBlocks(html: string): string {
   return html.replace(/<script[^>]*application\/ld\+json[^>]*>[\s\S]*?<\/script>/gi, '<!--JSONLD_STRIPPED-->');
-}
-
-/** Remove href="…" attribute values so phone numbers inside wa.me/tel: hrefs
- * are not counted as visible body text. Keeps the link's anchor text intact. */
-function stripHrefValues(html: string): string {
-  return html.replace(/\bhref="[^"]*"/gi, 'href="STRIPPED"');
 }
 
 export function guardContactInfo(rawHtml: string): GuardResult {
@@ -73,26 +65,16 @@ export function guardContactInfo(rawHtml: string): GuardResult {
     };
   }
 
-  // Rule 3: tel: link with the banned phone number.
-  if (/href="tel:\+?1?7347556357"/i.test(html)) {
+  // Rule 3: Rob's personal cell (734-755-6357) in ANY form, ANYWHERE — visible
+  // text, href (tel:, wa.me), or JSON-LD. Removed network-wide 2026-10-18: it drew
+  // tee-time calls and bypassed the tracked espadavilla.com/contact form.
+  if (/734\D{0,8}755\D{0,8}6357/.test(html)) {
     return {
       blocked: true,
       reason:
-        '[contact-info-guard] BLOCKED: tel:+17347556357 link found. Phone tel: links are not ' +
-        'permitted — use the WhatsApp CTA (https://wa.me/17347556357) or /contact link instead.',
-    };
-  }
-
-  // Rule 4: raw phone number in visible text outside href attributes and ld+json.
-  // Strip href values first so wa.me/17347556357 in an anchor's href is not flagged.
-  const strippedForPhone = stripHrefValues(visibleHtml);
-  if (/(?<!\d)7347556357(?!\d)/.test(strippedForPhone)) {
-    return {
-      blocked: true,
-      reason:
-        '[contact-info-guard] BLOCKED: raw phone number 7347556357 found in visible HTML outside ' +
-        'href/schema context. Phone numbers in body copy are not permitted — use the WhatsApp CTA ' +
-        'or /contact link instead.',
+        '[contact-info-guard] BLOCKED: Rob\'s personal phone number (734-755-6357) found in the post ' +
+        '(any format, including wa.me links, tel: links and JSON-LD). It must not appear in any ' +
+        'published post. Use a link to https://www.espadavilla.com/contact instead.',
     };
   }
 

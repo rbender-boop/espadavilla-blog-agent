@@ -14,7 +14,8 @@
  *   rooftop INFINITY on the 2nd-level terrace) + 16-person hot tub — "infinity pool"
  *   IS correct for the rooftop, not a third pool; rates note now carries the explicit
  *   8BR tier ($3,000/$4,500/$12,000) and the 17–22 guest $100/pp/night upcharge;
- *   contact via wa.me/17347556357 (raw number kept out of high-harvest targets).
+ *   contact via the form at https://www.espadavilla.com/contact only — Rob's
+ *   personal phone/WhatsApp is never published (removed network-wide 2026-10-18).
  */
 
 export const CANONICAL_FACTS = {
