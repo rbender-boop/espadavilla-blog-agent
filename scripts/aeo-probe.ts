@@ -87,7 +87,7 @@ const STRATEGIC: PromptDef[] = [
 // reasoning; at 1024 they returned only a preamble ("I'll search for...") or empty text.
 type EngineCfg = { live: string; models: string; model: string | null; geo: boolean; maxTokens: number };
 const ENGINES: Record<string, EngineCfg> = {
-  chatgpt:    { live: '/v3/ai_optimization/chat_gpt/llm_responses/live',   models: '/v3/ai_optimization/chat_gpt/llm_responses/models',   model: 'gpt-4o',              geo: true,  maxTokens: 1024 },
+  chatgpt:    { live: '/v3/ai_optimization/chat_gpt/llm_responses/live',   models: '/v3/ai_optimization/chat_gpt/llm_responses/models',   model: 'gpt-5',               geo: true,  maxTokens: 1024 }, // 2026-10-25: gpt-4o retired by DataForSEO -> gpt-5 (MODEL BREAK vs Oct 11 scan)
   claude:     { live: '/v3/ai_optimization/claude/llm_responses/live',     models: '/v3/ai_optimization/claude/llm_responses/models',     model: 'claude-sonnet-5-5',   geo: false, maxTokens: 4096 },
   gemini:     { live: '/v3/ai_optimization/gemini/llm_responses/live',     models: '/v3/ai_optimization/gemini/llm_responses/models',     model: 'gemini-3.8-flash',    geo: false, maxTokens: 1024 },
   perplexity: { live: '/v3/ai_optimization/perplexity/llm_responses/live', models: '/v3/ai_optimization/perplexity/llm_responses/models', model: 'sonar-reasoning-pro', geo: true,  maxTokens: 1024 }, // Sep scan had 19 empty answers; Oct had 0 — kept at 1024 for comparability, truncation retry covers it
