@@ -406,11 +406,23 @@ async function main(): Promise<void> {
 
   // Persist to Supabase in batches of 50.
   if (supabase) {
+    // 2026-10-25: batch 3 of scan 20261025_152201 hit "fetch failed" and was silently dropped while the
+    // log still said "Persisted 192". Now: retry each batch 3x, count real inserts, exit non-zero on loss.
+    let persisted = 0;
     for (let i = 0; i < rows.length; i += 50) {
-      const { error } = await supabase.from('aeo_snapshots').insert(rows.slice(i, i + 50));
-      if (error) console.error(`⚠️  Supabase insert failed (batch ${i / 50 + 1}): ${error.message}`);
+      const batch = rows.slice(i, i + 50);
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        const { error } = await supabase.from('aeo_snapshots').insert(batch);
+        if (!error) { persisted += batch.length; break; }
+        console.error(`⚠️  Supabase insert failed (batch ${i / 50 + 1}, attempt ${attempt}): ${error.message}`);
+        if (attempt < 3) await new Promise((r) => setTimeout(r, 3000 * attempt));
+      }
     }
-    console.log(`\nPersisted ${rows.length} rows to aeo_snapshots (scan_id=${scanId}).`);
+    console.log(`\nPersisted ${persisted}/${rows.length} rows to aeo_snapshots (scan_id=${scanId}).`);
+    if (persisted < rows.length) {
+      console.error(`⚠️  ${rows.length - persisted} rows NOT persisted. Fix with: npx tsx scripts/aeo-backfill.ts --scan=${scanId}`);
+      process.exitCode = 1;
+    }
   }
 
   // Summary — branded and unbranded reported SEPARATELY (charter §7).
