@@ -34,3 +34,23 @@ git commit -m "aeo-probe: pin ChatGPT to gpt-5 (DataForSEO retired gpt-4o)"
 git pull --rebase --autostash
 git push
 (--autostash because the repo has unrelated unstaged changes: docs/*.md, _scan.py deleted, Handovers/aeo-tools/*.)
+
+## UPDATE (later 2026-10-25) — full probe run + fixes, all pushed by Claude
+- Pushed 3d8f145 (gpt-5 pin, prompt step 1, this handover) and 6341cce (insert retry + aeo-backfill.ts + prompt step 1c).
+- Full probe scan 20261025_152201: 192 calls, 0 API errors, $6.18, ~62 min.
+- Bug found: Supabase insert batch 3 failed ("TypeError: fetch failed") and was dropped silently; log still said "Persisted 192". DB had 142 rows (missing 44 gemini + 6 perplexity). Backfilled the 50 rows from aeo_raw_20261025_152201.jsonl with new scripts/aeo-backfill.ts. DB now 192 rows, verified by SQL.
+- aeo-probe.ts now retries each batch 3x, prints "Persisted X/192", exits non-zero and names the backfill command on loss.
+
+## Unbranded KPIs, Oct 11 -> Oct 25 (error is null)
+| Engine | Mentioned | Cited |
+|---|---|---|
+| ChatGPT (gpt-4o -> gpt-5, MODEL BREAK) | 7/44 -> 19/44 | 7 -> 13 |
+| Claude sonnet-5-5 | 14/30 -> 22/44 | 12 -> 18 |
+| Gemini 3.8-flash | 24/44 -> 28/44 | 24 -> 32 |
+| Perplexity sonar-reasoning-pro | 29/44 -> 25/44 | 36 -> 35 |
+| Total | 74/162 (46%) -> 94/176 (53%) | 79 -> 98 |
+Branded: 16/16 mentioned both scans. ChatGPT jump is mostly the model change, not a site change.
+
+## Still open
+- Interpretive review (clusters, SOV, branded accuracy, should-win misses) on scan 20261025_152201 not yet written.
+- update_trigger for both tasks (requires_local_device=true + new step 1) needs a chat with scheduled-task tools.
