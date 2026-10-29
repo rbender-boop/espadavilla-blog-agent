@@ -13,3 +13,11 @@ Rob wants ALL tasks on Opus 5.5. Update the model on both Cowork scheduled tasks
 2. "Espadavilla AEO Review" — trig_015YKba3tnjz87xqAMtYhLru — set model → claude-opus-5-5. Prompt content unchanged.
 
 Verify both triggers after update and confirm no other trigger fields were touched.
+
+## DONE - 2026-09-26
+Both scheduled tasks pinned to claude-opus-5-5 via update_trigger (model field only):
+- trig_0179EPTYJGfRj4fyDxfhzc9d "Blog Editorial (Espadavilla + Golfvilla)": claude-opus-4-8 -> claude-opus-5-5
+- trig_015YKba3tnjz87xqAMtYhLru "Espadavilla AEO Review": claude-opus-5 -> claude-opus-5-5
+Read back and verified: cron, enabled, next_run_at, notifications (push+email), prompt (byte-identical)
+and MCP connector lists all unchanged on both. No tasks created or deleted.
+Note: the editorial task's v6 prompt header still reads "model claude-opus-4-8" - stale, not yet updated.

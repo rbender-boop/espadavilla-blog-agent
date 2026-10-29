@@ -1,5 +1,16 @@
 # HANDOVER — AEO fixes, 2026–27 fee sweep, canon update — 2026-09-17
 
+## FINAL STATUS: ALL SHIPPED (2026-09-17)
+Everything below is pushed and deployed. Commits:
+- **espadavilla-com** `b2008714` — 16 files (fee sweep + 3 AEO fixes). Vercel deployed.
+- **espadavilla-blog-agent** `b0bc4c8` (canon) + `5961af8` (handover addendum).
+- **golfvilla-blog-agent** `c1ec062` (canon).
+- **golfvilla-com** `8f9bbf0` — 4 files (Las Iguanas nine-holes correction + evergreen maintenance dates). Vercel deployed.
+Supabase (both projects) synced and verified in-session — see sections below.
+Note: `_pdfsrc/` in espadavilla-com is gitignored, so the two fee fixes there are local-only;
+they'll matter only when the PDFs are next regenerated.
+Follow-up when convenient: GSC Request Indexing for the flagship post + Eden Roc compare page.
+
 ## Context
 First full AEO probe ran 2026-09-17 (scan `20260917_161631`, 192 calls, 0 errors, $5.07).
 Interpretive pass done in-chat. Rob approved: 3 AEO content fixes + site-wide fee sweep
