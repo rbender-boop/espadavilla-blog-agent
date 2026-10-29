@@ -52,12 +52,12 @@ export function networkBar(): string {
 /** Primary site nav (desktop) — verbatim from the live espadavilla.com template. */
 export function siteNav(): string {
   return `<nav class="site-nav scrolled" id="main-nav">
-  <a href="/" class="nav-logo"><span class="logo-top">Villa Espada</span><span class="logo-sub">Cap Cana · Dominican Republic</span></a>
+  <a href="/" class="nav-logo"><span class="logo-top">Villa Espada</span></a>
   <ul class="nav-links">
-    <li><a href="/villa">The Villa</a></li>
+    <li><a href="/villa">The Villa</a></li><li><a href="/bedrooms">Bedrooms</a></li>
     <li><a href="/golf">Golf</a></li>
     <li><a href="/amenities">Amenities</a></li>
-    <li><a href="/experiences">Experiences</a></li>
+    <li><a href="/experiences">Experiences</a></li><li><a href="/services">Services</a></li><li><a href="/itineraries">Itineraries</a></li>
     <li><a href="/gallery">Gallery</a></li>
     <li><a href="/rates">Rates</a></li>
     <li><a href="/map">Map</a></li>
@@ -72,7 +72,7 @@ export function siteNav(): string {
 export function mobileMenu(): string {
   return `<div class="mobile-menu"><button class="mobile-close">×</button>
   <a href="/">Home</a>
-  <a href="/villa">The Villa</a><a href="/golf">Golf</a>
+  <a href="/villa">The Villa</a><a href="/bedrooms">Bedrooms</a><a href="/golf">Golf</a>
   <a href="/amenities">Amenities</a><a href="/experiences">Experiences</a>
   <a href="/gallery">Gallery</a><a href="/rates">Rates</a>
   <a href="/map">Map</a><a href="/blog">Blog</a>
@@ -86,7 +86,7 @@ export function siteFooter(): string {
     <div class="footer-grid">
       <div class="footer-brand"><span class="logo-top">Villa Espada</span><span class="logo-sub">Cap Cana · Dominican Republic</span><p>6- or 8-bedroom luxury villa on Fairway 5 of Punta Espada Golf Course. Full staff. Member-guest discounted rate. Two golf carts.</p></div>
       <div class="footer-col"><h4>Villa</h4><ul><li><a href="/villa">The Villa</a></li><li><a href="/golf">Golf</a></li><li><a href="/amenities">Amenities</a></li></ul></div>
-      <div class="footer-col"><h4>Book</h4><ul><li><a href="/rates">Rates</a></li><li><a href="/contact">Contact</a></li><li><a href="/faq">FAQ</a></li><li><a href="/property-facts">Property Facts</a></li><li><a href="/about">About the Authors</a></li><li><a href="/press">Press</a></li></ul></div>
+      <div class="footer-col"><h4>Book</h4><ul><li><a href="/rates">Rates</a></li><li><a href="/contact">Contact</a></li><li><a href="/faq">FAQ</a></li><li><a href="/property-facts">Property Facts</a></li><li><a href="/about">About the Authors</a></li><li><a href="/press">Press</a></li><li><a href="/privacy">Privacy Policy</a></li></ul></div>
       <div class="footer-col"><h4>Contact</h4><ul><li><a href="/contact">Contact Us</a></li></ul></div>
     </div>
     <div class="footer-bottom"><p>© 2026 Villa Espada · espadavilla.com</p><p><span class="gold">Direct:</span> <a href="/contact" style="color:inherit;text-decoration:none;">Book direct</a></p></div>

@@ -82,7 +82,7 @@ function freshIndexPage(card: IndexCard): string {
   <meta property="og:url" content="${url}">
   <meta property="og:site_name" content="Villa Espada">
   <meta property="og:image" content="${SITE_ORIGIN}/images/hero-1.jpg">
-  <link rel="stylesheet" href="/css/main.css?v=20260608b">
+  <link rel="stylesheet" href="/css/main.css?v=20260915">
 ${gtmHead()}
   <link rel="icon" href="/favicon.ico" type="image/x-icon">
 </head>
@@ -103,7 +103,7 @@ ${renderListItem(card)}</ul>
   </div>
 </section>
 ${siteFooter()}
-<script src="/js/main.js?v=20260608b"></script>
+<script src="/js/main.js?v=20260915"></script>
 </body>
 </html>
 `;

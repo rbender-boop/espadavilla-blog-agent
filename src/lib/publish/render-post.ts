@@ -158,7 +158,7 @@ ${heroImage.width > 0 ? `  <meta property="og:image:width" content="${heroImage.
 
 ${jsonLd}
 
-  <link rel="stylesheet" href="/css/main.css?v=20260608b">
+  <link rel="stylesheet" href="/css/main.css?v=20260915">
   <style>
     .post-wrap { max-width: 820px; margin: 0 auto; padding: 130px 6vw 80px; }
     .post-hero { width: 100%; height: auto; border-radius: 8px; margin: 0 0 36px; display: block; }
@@ -224,7 +224,7 @@ ${sources.length ? `\n  <section class="post-sources">\n    <h2>Sources</h2>\n  
 
 ${siteFooter()}
 
-<script src="/js/main.js?v=20260608b"></script>
+<script src="/js/main.js?v=20260915"></script>
 </body>
 </html>
 `;
