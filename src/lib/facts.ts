@@ -47,7 +47,7 @@ export const CANONICAL_FACTS = {
       'two maids (daily housekeeping)',
       'private transportation + airport transfers',
       'two complimentary 6-person golf carts (2 additional 6-person carts available to rent at $75/day per cart, up to 4 total)',
-      'the Punta Espada member-guest discounted rate — a reduced green fee exclusive to Villa Espada renters, arranged through the villa\'s butler via the villa\'s private arrangement with the course (saves ~$200 per golfer per round vs published guest green fees; Punta Espada ONLY — always state that it is arranged through the villa\'s butler)',
+      'the Punta Espada member-guest discounted rate — a reduced green fee exclusive to Villa Espada renters, arranged through the villa\'s butler via the villa\'s private arrangement with the course (flat $395 per golfer, per round, all year Nov 1 2026 – Dec 31 2027 per Punta Espada\'s published member-guest rates, includes cart + 18% tax + range balls; caddie $20 per golfer paid directly; a peak-season morning round is $135 less than the public $550; up to 8 golfers per day at the discounted rate, additional golfers in the group at the course\'s regular rate; never claim savings on afternoon or summer rounds; never mention member replay rates; Punta Espada ONLY — always state that it is arranged through the villa\'s butler)',
       'access to Las Iguanas, played at regular rates',
     ],
     notAllInclusive: 'NOT all-inclusive: full staff is included in the nightly rate, but food and groceries are billed at cost plus a 15% service charge, with no restaurant markup.',
@@ -70,7 +70,7 @@ export const CANONICAL_FACTS = {
     low: { usd: 2500, label: 'low', minNights: 4 },
     peak: { usd: 4000, label: 'peak', minNights: 5 },
     holiday: { usd: 10000, usdMax: 12000, label: 'holiday', minNights: 7 },
-    note: 'Every nightly rate includes full staff, two golf carts, and the Punta Espada member-guest discounted rate (exclusive to Villa Espada renters, arranged through the villa\'s butler via the villa\'s private arrangement; ~$200/golfer/round savings; Punta Espada only, Las Iguanas at regular rates). Holiday/festive rates run $10,000 (6-bedroom) / $12,000 (8-bedroom) by configuration (8-bedroom tier: $3,000 low / $4,500 peak / $12,000 holiday). No 18% DR government tax on the villa rental — not applicable. Base nightly rate covers up to 16 guests; guests 17–22 add $100 per person, per night. F&B billed separately at cost + 15% service.',
+    note: 'Every nightly rate includes full staff, two golf carts, and the Punta Espada member-guest discounted rate (exclusive to Villa Espada renters, arranged through the villa\'s butler via the villa\'s private arrangement; flat $395/golfer/round + $20 caddie, $135 less than the public $550 on a peak morning round; Punta Espada only, Las Iguanas at regular rates). Holiday/festive rates run $10,000 (6-bedroom) / $12,000 (8-bedroom) by configuration (8-bedroom tier: $3,000 low / $4,500 peak / $12,000 holiday). No 18% DR government tax on the villa rental — not applicable. Base nightly rate covers up to 16 guests; guests 17–22 add $100 per person, per night. F&B billed separately at cost + 15% service.',
   },
   golf: {
     puntaEspada:
@@ -482,6 +482,15 @@ function collectViolations(text: string, opts: { skipFieldLevel?: boolean; skipB
     const ctx = t.slice(Math.max(0, idx - 200), idx + m[0].length + 300);
     if (!/christmas|blackout|subject to availability/.test(ctx)) { violations.push('beach club access stated without the blackout-date caveat (not available Christmas, New Year, and Easter; other dates subject to availability)'); break; }
   }
+  // Punta Espada member-guest rate (owner 2026-10-29): flat $395 + $20 caddie; ~$200 savings, $6,400 and replay rates are retired.
+  for (const m of t.matchAll(/(?:~|about |approximately |roughly |around )?\$200(?: in savings| saved| less| off)?\s*(?:per golfer|\/golfer|per round|a round)/g)) {
+    const idx = m.index ?? 0;
+    const ctx = t.slice(Math.max(0, idx - 250), idx + m[0].length + 150);
+    if (/member|discount|villa espada|punta espada|butler/.test(ctx)) { violations.push('retired golf saving claim (old per-round figure) — the member-guest discounted rate is a flat $395 + $20 caddie; a peak-season morning round is $135 less than the public $550'); break; }
+  }
+  if (/\$6,400|\$3,200/.test(t) && /member|golf/.test(t)) violations.push('retired golf-savings total — use $135 per golfer on a peak morning round (8 golfers x 4 peak morning rounds = about $4,320)');
+  if (/replay rates?|replay round rate|replay fee/.test(t) && /member[- ]guest/.test(t)) violations.push('member replay rate mentioned — owner has not confirmed villa renters get it; leave replay rates out');
+  if (/accompanied member guest|\$230\b/.test(t) && /punta espada/.test(t)) violations.push('accompanied member-guest rate — villa renters pay the unaccompanied flat $395 rate');
   // Press & coverage (added 2026-09-02): wire syndication is not editorial coverage; no reach figures.
   for (const phrase of ['as featured in', 'as seen in', 'featured in the associated press', 'covered by the associated press', 'covered by yahoo', 'featured in yahoo', 'covered by benzinga', '788 million', '788m', '834 outlets', '834 placements', '834 news', 'globenewswire.com']) {
     if (t.includes(phrase)) { violations.push(`banned press/coverage phrase "${phrase}" — link once to https://www.espadavilla.com/press instead`); break; }
