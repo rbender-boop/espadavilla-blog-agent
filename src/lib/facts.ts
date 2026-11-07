@@ -33,6 +33,7 @@ export const CANONICAL_FACTS = {
     // the 6-bedroom configuration sleeps UP TO 16 guests; the full 8-bedroom estate sleeps UP TO 22.
     // Never claim 22 for the 6-bedroom tier. Unqualified "up to 22" is acceptable ONLY for the
     // property / 8-bedroom maximum. The 17-22 guest upcharge ($100/pp/night) exists only in the 8-bedroom estate.
+    // ADULT LIMIT (OWNER 2026-11-07): 6-bedroom rate covers up to 16 guests with no more than 12 adults; 13 or more adults must book the full 8-bedroom estate.
     maxGuests: 22,
     maxGuestsByTier: { 6: 16, 8: 22 } as const,
     sqftMin: 15000, // "15,000+ sq ft"
@@ -135,7 +136,7 @@ export function buildFactsPromptBlock(): string {
     '- GolfWeek: every #1 claim reads "#1 in the Caribbean and Mexico by GolfWeek for eight consecutive years" — the binding in the SAME sentence as the claim. Never an unbound "#1", never "top-10 world-ranked" or any "top-N in the world" phrasing, never Golf Digest or Golf Magazine as the #1 source. Golf Digest appears only as "#57 on Golf Digest\'s World\'s 100 Greatest 2026-27".',
     '- Member-guest rate: always described as arranged through the villa\'s butler (the body and the FAQ must each say so at least once when they mention it); Punta Espada ONLY; Las Iguanas is played at regular rates; never "reserved for Cap Cana property owners".',
     '- Rates: only $2,500 low / $4,000 peak / $10,000 / $12,000 holiday (8-bedroom tier $3,000 / $4,500 / $12,000) plus the $100 per person, per night upcharge for guests 17–22. Never a composite or blended "nightly rate" such as $4,400 or $4,600.',
-    '- Bedrooms: "6-or-8 bedroom" (or "6 or 8 bedrooms") — never "8-bedroom" alone in a FAQ answer, title, or description without the 6-bedroom option in the same field. 6-bedroom sleeps up to 16; full 8-bedroom estate up to 22 — never "22 guests in either configuration".',
+    '- Bedrooms: "6-or-8 bedroom" (or "6 or 8 bedrooms") — never "8-bedroom" alone in a FAQ answer, title, or description without the 6-bedroom option in the same field. 6-bedroom sleeps up to 16; full 8-bedroom estate up to 22 — never "22 guests in either configuration". 6-bedroom rate covers up to 16 guests with no more than 12 adults; 13 or more adults must book the full 8-bedroom estate.',
     '- Water: the Caribbean Sea — never the Atlantic. Punta Espada has 8 ocean holes (never 9).',
     '- Food: "at cost plus a 15% service charge, with no restaurant markup" — this exact phrase, in FAQ answers too.',
     '',
@@ -475,6 +476,10 @@ function collectViolations(text: string, opts: { skipFieldLevel?: boolean; skipB
   // Variant of the retired phrasing (seen in the 8e81fb32 FAQ): "22 guests in either a 6-bedroom or 8-bedroom configuration".
   if (/(?:22|twenty[\s-]?two)\s+(?:guests?|people)\s+(?:in|across|with|under)\s+either\b/.test(t)) {
     violations.push('"22 guests in either ..." — 22 is the full 8-bedroom estate only; the 6-bedroom configuration sleeps up to 16');
+  }
+  // Adult limit retired 2026-11-07 (was 11 adults / 12+ adults).
+  if (/\b(?:11|eleven)\s+adults\b|\b(?:12|twelve)\s*(?:\+|or more)\s+adults\b|more than (?:11|eleven) adults/.test(t)) {
+    violations.push('retired adult limit — canonical: 6-bedroom rate covers up to 16 guests with no more than 12 adults; 13 or more adults must book the full 8-bedroom estate.');
   }
   // Beach club must carry the blackout caveat when framed as complimentary/included.
   for (const m of t.matchAll(/(?:complimentary|included|free|private)\s+(?:access\s+to\s+)?(?:the\s+)?(?:eden roc\s+)?beach club/g)) {
