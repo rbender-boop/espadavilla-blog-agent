@@ -38,3 +38,20 @@ git pull --rebase
 git push
 cd "C:\Users\rbend\Desktop\Claude Projects\GOLFVILLA-WEBSITE\VILLA-ESPADA-PACKAGE\WEBSITE"
 git pull --rebase
+
+
+## Addendum — 2026-11-08 afternoon (after Rob pushed cbe87f7c + Handover 7)
+- Rob's re-render commands did not commit (drift guard). Ran them with --force after a drift check showed only the intended source-line diffs: caleton 208fe626, staying-at 6a56ef97.
+- **Task 3 DONE** — group-golf-stay-cap-cana-member-rates-tee-times: added the 12-golfer / three-foursome paragraph; fixed Las Iguanas "play 18 … four hours" → back nine, ~2 hours; "36 Nicklaus holes" → "two Nicklaus courses" (H2, body, meta description); "member-guest … access to 36 Nicklaus holes" → member-guest at Punta Espada + regular rate at Las Iguanas; caddie sentence (member-guest $395 excludes the $20 caddie; the published fee includes it); typo "reboks". Merged live hand-patches (Las Iguanas sentence + its source line) into the DB first.
+- golf-course-cap-cana-transportation-villa-espada-playbook: "Golf is included at the member-guest rate, but you'll pay greens fees, caddy fees and cart fees" → billed separately, $395 (cart + tax included) + $20 caddie, Las Iguanas regular rates. Merged live Las Iguanas hand-patches; dropped the "PUJ has no public bus" source (already gone from live); source "first nine holes (the back nine)".
+- caleton FAQ: removed the unverified "$20-$25" gate fee.
+- Live commits: 335cb720, f662938e, 9b416c95, 5665b12e, 573f3db3, fc3956a3. Verified live; IndexNow (Bing) 200.
+- Note: the published Punta Espada fee DOES include the caddie (only the member-guest $395 excludes it). Don't "fix" citations saying "published rates include … caddy fee".
+- **Static "walk to the first tee" fixes (uncommitted, Rob to push):** espadavilla-com hotels-near-cap-cana-punta-espada ("short walk from the clubhouse"), best-caribbean-golf-resorts, best-golf-courses-dominican-republic, cap-cana-golf-guide, punta-espada-vs-corales-vs-la-cana, compare/index, golf-courses/punta-espada, villa → "about five minutes by golf cart"; dateModified + sitemap lastmod 2026-11-08. golfvilla-com index.html ("walk to the first tee in your socks").
+- After Rob pushes: IndexNow those 9 URLs via bing.com/indexnow (api.indexnow.org blocked from this laptop).
+- Commit message tip: use single quotes in PowerShell when the message contains $.
+
+## Still open
+- Re-voice the 2 videos (member-guest-rate KU-_3A8cGUo; whats-included) + edit KU-_3A8cGUo description in YouTube Studio.
+- GSC Request Indexing (manual).
+- Casa de Campo "subject to access" in _gen_pdfs.py golf itinerary vs canon line 99 (not changed).
