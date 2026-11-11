@@ -10,6 +10,8 @@
  * HTML and re-inserts them into the freshly rendered HTML at the same anchor the site script
  * uses (the dark "Explore" section, else the footer). Pure function, no I/O.
  */
+import { extractHreflangBlock, upsertHreflangBlock, HREFLANG_START } from '../i18n/hreflang';
+
 const BLOCKS = ['VE-POPULAR-TAGS', 'VE-RELATED-STORIES', 'VE-NEWSLETTER'] as const;
 const EXPLORE_ANCHOR = '<section style="background:#0a1628;padding:48px 0;">';
 const FOOTER_ANCHOR = '<footer class="site-footer">';
@@ -28,6 +30,13 @@ export function preserveSiteBlocks(previousHtml: string | null | undefined, fres
   if (!previousHtml) return { html: freshHtml, carried: [] };
   let html = freshHtml;
   const carried: string[] = [];
+  // Translation hreflang links live in <head>, so they're carried separately
+  // (2026-11-11): a bare English re-render must not drop the language links.
+  const hreflang = extractHreflangBlock(previousHtml);
+  if (hreflang && !html.includes(HREFLANG_START)) {
+    html = upsertHreflangBlock(html, hreflang).html;
+    carried.push('VE-HREFLANG');
+  }
   let bundle = '';
   for (const name of BLOCKS) {
     if (html.includes(`<!-- ${name} START -->`)) continue; // template already emits it

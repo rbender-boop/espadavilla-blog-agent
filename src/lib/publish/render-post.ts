@@ -22,6 +22,9 @@
 
 import { SITE_ORIGIN, postUrl } from '../links';
 import { gtmHead, gtmBodyNoscript, networkBar, siteNav, mobileMenu, siteFooter } from './site-chrome';
+import type { LangCode } from '../i18n/languages';
+import { translatedPostUrl, buildHreflangBlock, type Alternate } from '../i18n/hreflang';
+import { UI, formatDate } from '../i18n/ui-strings';
 
 export type RenderInput = {
   slug: string;
@@ -38,10 +41,17 @@ export type RenderInput = {
   articleSection?: string | undefined;     // topic cluster — audit fix #9
   keywords?: string[] | undefined;         // primary + secondary — audit fix #9
   image?: { url: string; width: number; height: number; alt: string } | undefined; // per-post hero (cluster-mapped)
+  /** Translated page (2026-11-11). Omitted = English (output unchanged). */
+  i18n?: { lang: LangCode; locale: string } | undefined;
+  /** hreflang alternates (all versions incl. this one + x-default). */
+  alternates?: Alternate[] | undefined;
 };
 
 export function renderPostHtml(input: RenderInput): string {
-  const url = postUrl(input.slug);
+  const url = input.i18n ? translatedPostUrl(input.i18n.lang, input.slug) : postUrl(input.slug);
+  const ui = UI[input.i18n?.lang ?? 'en'];
+  const blogPath = input.i18n ? `/${input.i18n.lang}/blog` : '/blog';
+  const htmlLang = input.i18n?.locale ?? 'en';
   const title = escapeHtml(input.meta_title);
   const desc = escapeHtml(input.meta_description);
   const h1 = escapeHtml(input.h1);
@@ -52,7 +62,7 @@ export function renderPostHtml(input: RenderInput): string {
   // De-duplicate sources by URL; keep only well-formed http(s) links.
   const sources = dedupeSources(input.sources ?? []);
   const bodyHtml = addHeadingIds(markdownToHtml(body));
-  const tocHtml = buildToc(body);
+  const tocHtml = buildToc(body, ui.inThisArticle);
   const faqHtml = renderFaqHtml(faq);
   // Per-post hero image (cluster-mapped). Falls back to the legacy single hero
   // only when no image is supplied, so older callers keep working.
@@ -75,7 +85,7 @@ export function renderPostHtml(input: RenderInput): string {
     image: heroImage.width > 0
       ? { '@type': 'ImageObject', url: heroImage.url, width: heroImage.width, height: heroImage.height }
       : heroImage.url,
-    inLanguage: 'en',
+    inLanguage: htmlLang,
     author: { '@id': `${SITE_ORIGIN}/#person-rb` },
     publisher: { '@id': `${SITE_ORIGIN}/#organization` },
     breadcrumb: { '@id': `${url}#breadcrumb` },
@@ -110,8 +120,8 @@ export function renderPostHtml(input: RenderInput): string {
     '@type': 'BreadcrumbList',
     '@id': `${url}#breadcrumb`,
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_ORIGIN}/` },
-      { '@type': 'ListItem', position: 2, name: 'Blog', item: `${SITE_ORIGIN}/blog` },
+      { '@type': 'ListItem', position: 1, name: ui.home, item: `${SITE_ORIGIN}/` },
+      { '@type': 'ListItem', position: 2, name: ui.blog, item: `${SITE_ORIGIN}${blogPath}` },
       { '@type': 'ListItem', position: 3, name: input.h1, item: url },
     ],
   };
@@ -131,7 +141,7 @@ export function renderPostHtml(input: RenderInput): string {
   const jsonLd = jsonLdScript({ '@context': 'https://schema.org', '@graph': graph });
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${htmlLang}">
 <head>
 ${gtmHead()}
   <meta charset="UTF-8">
@@ -140,8 +150,8 @@ ${gtmHead()}
   <meta name="description" content="${desc}">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="${url}">
-
-  <meta property="og:type" content="article">
+${input.alternates?.length ? buildHreflangBlock(input.alternates) + '\n' : ''}
+  <meta property="og:type" content="article">${input.i18n ? `\n  <meta property="og:locale" content="${input.i18n.locale === 'es-419' ? 'es_LA' : input.i18n.locale.replace('-', '_')}">` : ''}
   <meta property="og:title" content="${title}">
   <meta property="og:description" content="${desc}">
   <meta property="og:image" content="${ogImage}">
@@ -204,21 +214,21 @@ ${mobileMenu()}
 
 <main class="post-wrap">
   <div class="post-breadcrumb">
-    <a href="/">Home</a> &nbsp;›&nbsp; <a href="/blog">Blog</a> &nbsp;›&nbsp; ${h1}
+    <a href="/">${escapeHtml(ui.home)}</a> &nbsp;›&nbsp; <a href="${blogPath}">${escapeHtml(ui.blog)}</a> &nbsp;›&nbsp; ${h1}
   </div>
 
   <h1>${h1}</h1>
-  <p class="post-meta">Villa Espada · Published ${escapeHtml(formatHumanDate(input.publishedISO))}</p>
+  <p class="post-meta">Villa Espada · ${escapeHtml(ui.published)} ${escapeHtml(input.i18n ? formatDate(input.publishedISO, input.i18n.locale) : formatHumanDate(input.publishedISO))}</p>
 ${input.image ? `\n  <img class="post-hero" src="${heroImage.url}" alt="${escapeHtml(heroImage.alt)}"${heroImage.width > 0 ? ` width="${heroImage.width}" height="${heroImage.height}"` : ''} loading="eager">\n` : ''}
 ${summary ? `\n  <div class="post-summary"><p>${escapeHtml(summary)}</p></div>\n` : ''}
 ${tocHtml ? `\n${indent(tocHtml, 2)}\n` : ''}
 ${indent(bodyHtml, 2)}
-${faqHtml ? `\n  <section class="post-faq">\n    <h2>Frequently Asked Questions</h2>\n${indent(faqHtml, 4)}\n  </section>\n` : ''}
-${sources.length ? `\n  <section class="post-sources">\n    <h2>Sources</h2>\n    <ul>\n${sources.map((s) => `      <li>${renderSourceItem(s)}</li>`).join('\n')}\n    </ul>\n  </section>\n` : ''}
+${faqHtml ? `\n  <section class="post-faq">\n    <h2>${escapeHtml(ui.faq)}</h2>\n${indent(faqHtml, 4)}\n  </section>\n` : ''}
+${sources.length ? `\n  <section class="post-sources">\n    <h2>${escapeHtml(ui.sources)}</h2>\n    <ul>\n${sources.map((s) => `      <li>${renderSourceItem(s)}</li>`).join('\n')}\n    </ul>\n  </section>\n` : ''}
   <div class="post-cta">
-    <a href="/contact" class="btn btn-gold">Inquire &amp; Book</a>
-    <a href="/rates" class="btn btn-gold" style="margin-left:12px;">View Rates</a>
-    <a href="/availability" class="btn btn-outline" style="margin-left:12px;">Check Availability</a>
+    <a href="/contact" class="btn btn-gold">${escapeHtml(ui.inquire)}</a>
+    <a href="/rates" class="btn btn-gold" style="margin-left:12px;">${escapeHtml(ui.viewRates)}</a>
+    <a href="/availability" class="btn btn-outline" style="margin-left:12px;">${escapeHtml(ui.checkAvailability)}</a>
   </div>
 </main>
 
@@ -315,7 +325,7 @@ function hostnameOf(url: string): string {
  * H3s are intentionally excluded to keep the TOC scannable.
  */
 
-export function buildToc(markdown: string): string {
+export function buildToc(markdown: string, label = 'In this article'): string {
   const h2s: Array<{ text: string; id: string }> = [];
   for (const line of markdown.split('\n')) {
     const m = /^##\s+(.+)$/.exec(line.trim());
@@ -331,7 +341,7 @@ export function buildToc(markdown: string): string {
   }
   if (h2s.length < 3) return '';
   const items = h2s.map((h) => `    <li><a href="#${h.id}">${escapeHtml(h.text)}</a></li>`).join('\n');
-  return `<nav class="post-toc" aria-label="Table of contents">\n  <p class="post-toc-label">In this article</p>\n  <ol>\n${items}\n  </ol>\n</nav>`;
+  return `<nav class="post-toc" aria-label="Table of contents">\n  <p class="post-toc-label">${escapeHtml(label)}</p>\n  <ol>\n${items}\n  </ol>\n</nav>`;
 }
 
 /* Add id attributes to H2 elements so TOC anchor links resolve */
