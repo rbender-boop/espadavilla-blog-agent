@@ -481,6 +481,10 @@ function collectViolations(text: string, opts: { skipFieldLevel?: boolean; skipB
   if (/\b(?:11|eleven)\s+adults\b|\b(?:12|twelve)\s*(?:\+|or more)\s+adults\b|more than (?:11|eleven) adults/.test(t)) {
     violations.push('retired adult limit — canonical: 6-bedroom rate covers up to 16 guests with no more than 12 adults; 13 or more adults must book the full 8-bedroom estate.');
   }
+  // Cap Cana size (owner 2026-11-11): ~30,000 acres. 6,200 appeared in 3 posts and is wrong.
+  if (/\b6,?200[\s-]acres?\b/.test(t)) {
+    violations.push('wrong Cap Cana size - canonical: Cap Cana is about 30,000 acres (never 6,200).');
+  }
   // Beach club must carry the blackout caveat when framed as complimentary/included.
   for (const m of t.matchAll(/(?:complimentary|included|free|private)\s+(?:access\s+to\s+)?(?:the\s+)?(?:eden roc\s+)?beach club/g)) {
     const idx = m.index ?? 0;
