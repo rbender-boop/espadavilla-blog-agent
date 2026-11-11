@@ -13,6 +13,7 @@
 import { createHash } from 'node:crypto';
 import type Anthropic from '@anthropic-ai/sdk';
 import { supabase } from '../supabase';
+import { postUrl } from '../links';
 import { getAnthropic, MODEL } from '../drafting/generate-post';
 import { buildFactsPromptBlock } from '../facts';
 import { TRANSLATION_LANGUAGES, getLanguage, type LangCode } from './languages';
@@ -122,6 +123,17 @@ export async function translateOne(draftId: string, lang: LangCode): Promise<Tra
   const en = englishContent(d);
   const hash = contentHash(en);
   const base = { draft_id: draftId, lang, locale: def.locale, source_hash: hash, source_updated_at: d.updated_at, model: MODEL };
+
+  // Skip posts whose English URL now redirects or is gone (no API spend on them).
+  if (d.slug) {
+    const status = await fetch(postUrl(d.slug), { redirect: 'manual' }).then((r) => r.status).catch(() => 0);
+    if (status !== 0 && status < 500 && status !== 200) {
+      await supabase.from('blog_post_translations').upsert(
+        { ...base, status: 'fact_check_failed', risk_score: 1, block_reason: `English page returns ${status}, not 200 (redirected or removed)` },
+        { onConflict: 'draft_id,lang' });
+      return { draft_id: draftId, lang, status: 'fact_check_failed', note: `English URL ${status}` };
+    }
+  }
 
   const { error: claimErr } = await supabase.from('blog_post_translations')
     .upsert({ ...base, status: 'translating', block_reason: null }, { onConflict: 'draft_id,lang' });

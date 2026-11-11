@@ -25,3 +25,26 @@ Render /<lang>/blog/<slug>, hreflang on all 5 versions + x-default, inLanguage/o
 sitemap + llms.txt entries, language tabs on /blog, re-render English posts with hreflang links.
 Translations keyed to the current published English draft (refresh → new draft id → new translations).
 Internal links inside translations still point to English URLs; localize in step 3 when the target translation exists.
+
+## Step 3 — publisher + site (DONE in code, both repos, 2026-11-11)
+- `src/lib/i18n/publish-translations.ts`: one atomic commit per post once its 4 languages are settled
+  (or 2h after the first approval): translated pages (pipeline-owned, re-rendered from the DB),
+  hreflang block PATCHED into the English post (English never re-rendered from the DB), /<lang>/blog
+  index pages regenerated, English /blog index patched with language tabs + hreflang, sitemap, IndexNow.
+- Guards: English URL must return 200 (redirected/removed posts are skipped before any API spend),
+  contact-info guard on every rendered page, English draft must be status published.
+- `render-post.ts`: optional `i18n` + `alternates`; English output verified byte-identical to before.
+- Re-renders keep the hreflang block: espadavilla `preserve-site-blocks.ts`; golfvilla
+  `scripts/rerender-local.ts` + `scripts/rerender-published.ts`.
+- Paths: espadavilla `<lang>/blog/<slug>.html`; golfvilla `<lang>/blog/<slug>/index.html`.
+- Tabs anchor: espadavilla after the breadcrumb; golfvilla after the first <h1> in main.blog-wrap.
+- Cron: translate 1 pair + publish 1 ready post per run, every 5 min. Kill switches: TRANSLATE_POSTS=false,
+  PUBLISH_TRANSLATIONS=false.
+- Tests: `scripts/verify-translation-check.ts`, `scripts/verify-translation-publish.ts`.
+
+## BLOCKER (2026-11-11 20:00 UTC)
+The production ANTHROPIC_API_KEY on Vercel returns 401 invalid x-api-key (both projects' first runs failed),
+same as the June key in .env.local. This also breaks the Dec 1 monthly drafting. Fix: new key from
+console.anthropic.com → Vercel env ANTHROPIC_API_KEY (Production) on espadavilla-blog-agent AND
+golfvilla-blog-agent → redeploy. Then reset failed rows so they retry immediately:
+`update blog_post_translations set status='pending' where status='failed';` (both projects).

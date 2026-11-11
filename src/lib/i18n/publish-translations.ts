@@ -13,7 +13,7 @@
  * four separate deploys per post.
  */
 import { supabase } from '../supabase';
-import { postRepoPath } from '../links';
+import { postRepoPath, postUrl } from '../links';
 import { renderPostHtml } from '../publish/render-post';
 import { guardContactInfo } from '../publish/contact-info-guard';
 import { pickPostImage } from '../publish/blog-images';
@@ -125,6 +125,14 @@ export async function publishTranslationsForDraft(draftId: string): Promise<TPub
   if (!englishFile) {
     await block(approved.map((r) => r.id), 'English page not in the site repo (redirected or removed)');
     return { draft_id: draftId, slug, ok: true, note: 'English page missing; translations blocked' };
+  }
+
+  // The English URL must answer 200 itself: posts that now 301 elsewhere get no translations.
+  const liveStatus = await fetch(postUrl(slug), { redirect: 'manual' }).then((r) => r.status).catch(() => 0);
+  if (liveStatus === 0 || liveStatus >= 500) return { draft_id: draftId, slug, ok: false, note: `English URL check failed (${liveStatus}); retry next run` };
+  if (liveStatus !== 200) {
+    await block(approved.map((r) => r.id), `English page returns ${liveStatus}, not 200 (redirected or removed)`);
+    return { draft_id: draftId, slug, ok: true, note: `English URL status ${liveStatus}; translations blocked` };
   }
 
   let cluster: string | null = null;
