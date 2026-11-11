@@ -48,3 +48,16 @@ same as the June key in .env.local. This also breaks the Dec 1 monthly drafting.
 console.anthropic.com → Vercel env ANTHROPIC_API_KEY (Production) on espadavilla-blog-agent AND
 golfvilla-blog-agent → redeploy. Then reset failed rows so they retry immediately:
 `update blog_post_translations set status='pending' where status='failed';` (both projects).
+
+## FINAL STATE (2026-11-11 21:30 UTC) — LIVE ON BOTH SITES
+- New Anthropic key set in Vercel (both projects) and both .env.local files; all four verified (HTTP 200 / production runs).
+- Translation prompt fixed: the canonical-facts sheet made the model 'correct' numbers (6,200→30,000 acres, invented $395 rate,
+  added a Golf Digest #57 ranking). Removed; rule 7 now says translate faithfully. Number gate caught every bad version.
+- Name check accepts hyphenated compounds (German 'Golf-Digest-Liste'). 
+px tsx scripts/translate-local.ts --recheck
+  re-runs the checker on blocked rows without an API call.
+- Verified live: espadavilla cap-cana-golf-residences-villa-espada-playbook + things-to-do-villa-espada-non-golf-family;
+  golfvilla where-can-i-rent-a-villa-with-direct-access-to-a-golf-course — all 4 languages 200, correct lang, matching
+  hreflang on all 5 versions + x-default, tabs on /blog and /<lang>/blog, sitemap entries.
+- Backfill runs on its own (1 translation + 1 publish per site every 5 min). Watch: select * from v_translation_status;
+- Open question for Rob: playbook says Cap Cana is 6,200 acres; sargassum post says 30,000. One English post is wrong.
