@@ -15,7 +15,6 @@ import type Anthropic from '@anthropic-ai/sdk';
 import { supabase } from '../supabase';
 import { postUrl } from '../links';
 import { getAnthropic, MODEL } from '../drafting/generate-post';
-import { buildFactsPromptBlock } from '../facts';
 import { TRANSLATION_LANGUAGES, getLanguage, type LangCode } from './languages';
 import { checkTranslation, PROTECTED_TERMS, type TranslationContent } from './translation-check';
 
@@ -79,10 +78,8 @@ function buildSystem(languageName: string): string {
     `4. Keep these names exactly as written, never translated: ${PROTECTED_TERMS.join(', ')}.`,
     '5. Keep every link URL exactly as written. Translate only the visible link text.',
     '6. Add nothing and drop nothing. No new facts, claims, examples, or opinions. If a sentence is awkward, rephrase it, but keep its meaning.',
-    '7. The facts below are the canonical villa facts. The English text already matches them; your translation must state the same facts. They are context, not text to insert.',
+    '7. Translate faithfully. Never correct, update, or "fix" a fact, even if you believe the English is wrong. Every number, distance, date, and price must match the English exactly.',
     '8. Output ONLY via the emit_translation tool. No preamble, no notes.',
-    '',
-    buildFactsPromptBlock(),
   ].join('\n');
 }
 
