@@ -80,9 +80,11 @@ export function checkTranslation(en: TranslationContent, tr: TranslationContent)
   if (missing.length) problems.push(`numbers missing: ${missing.slice(0, 10).join(', ')}`);
   if (added.length) problems.push(`numbers not in English: ${added.slice(0, 10).join(', ')}`);
 
-  // Names
+  // Names (German compounds hyphenate them: "Golf-Digest-Liste" keeps the name)
+  const dehyphen = (s: string) => s.replace(/[-\u2010\u2011]/g, ' ');
+  const trNames = dehyphen(trText);
   for (const term of PROTECTED_TERMS) {
-    if (enText.includes(term) && !trText.includes(term)) problems.push(`name not kept verbatim: ${term}`);
+    if (enText.includes(term) && !trNames.includes(dehyphen(term))) problems.push(`name not kept verbatim: ${term}`);
   }
 
   // Links

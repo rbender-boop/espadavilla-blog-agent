@@ -187,3 +187,25 @@ export async function translatePending(limit: number): Promise<TranslateResult[]
   for (const w of work) results.push(await translateOne(w.draft_id, w.lang));
   return results;
 }
+
+/** Re-run the checker on stored 'fact_check_failed' translations (no API call).
+ *  Use after a checker fix. Redirect blocks are left alone. */
+export async function recheckStored(): Promise<TranslateResult[]> {
+  const { data: rows } = await supabase.from('blog_post_translations')
+    .select('id, draft_id, lang, h1, meta_title, meta_description, summary, body_markdown, faq, block_reason')
+    .eq('status', 'fact_check_failed');
+  const out: TranslateResult[] = [];
+  for (const r of rows ?? []) {
+    if (String(r.block_reason ?? '').startsWith('English page')) continue;
+    const { data: d } = await supabase.from('blog_post_drafts').select(DRAFT_COLS).eq('id', r.draft_id).single<EnglishRow>();
+    if (!d || d.status !== 'published') continue;
+    const tr: TranslationContent = {
+      h1: r.h1 ?? '', meta_title: r.meta_title ?? '', meta_description: r.meta_description ?? '',
+      summary: r.summary ?? '', body_markdown: r.body_markdown ?? '', faq: (r.faq ?? []) as TranslationContent['faq'],
+    };
+    const v = checkTranslation(englishContent(d), tr);
+    if (v.ok) await supabase.from('blog_post_translations').update({ status: 'approved', risk_score: 0, block_reason: null }).eq('id', r.id);
+    out.push({ draft_id: r.draft_id, lang: r.lang as LangCode, status: v.ok ? 'approved' : 'fact_check_failed', note: v.ok ? undefined : v.problems.join(' | ') });
+  }
+  return out;
+}

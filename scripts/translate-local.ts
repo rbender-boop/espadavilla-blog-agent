@@ -7,15 +7,17 @@
 import { config } from 'dotenv';
 config({ path: '.env.local' });
 
-import { translateOne, translatePending } from '../src/lib/i18n/translate';
+import { translateOne, translatePending, recheckStored } from '../src/lib/i18n/translate';
 import type { LangCode } from '../src/lib/i18n/languages';
 
 async function main() {
   const [a, b] = process.argv.slice(2);
-  const results = a === '--pending'
+  const results = a === '--recheck'
+    ? await recheckStored()
+    : a === '--pending'
     ? await translatePending(Number(b ?? 4))
     : a && b ? [await translateOne(a, b as LangCode)]
-    : (() => { throw new Error('usage: <draftId> <es|fr|de|pt>  |  --pending <n>'); })();
+    : (() => { throw new Error('usage: <draftId> <es|fr|de|pt>  |  --pending <n>  |  --recheck'); })();
   for (const r of results) console.log(`${r.lang} ${r.draft_id} → ${r.status}${r.note ? `  (${r.note})` : ''}`);
   process.exit(results.every((r) => r.status === 'approved') ? 0 : 1);
 }
