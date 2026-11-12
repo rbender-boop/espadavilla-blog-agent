@@ -61,3 +61,20 @@ px tsx scripts/translate-local.ts --recheck
   hreflang on all 5 versions + x-default, tabs on /blog and /<lang>/blog, sitemap entries.
 - Backfill runs on its own (1 translation + 1 publish per site every 5 min). Watch: select * from v_translation_status;
 - Open question for Rob: playbook says Cap Cana is 6,200 acres; sargassum post says 30,000. One English post is wrong.
+
+## STUCK-TRANSLATION AUDIT + FIX (2026-11-12)
+Backfill had finished 03:21 UTC with 48 rows blocked (espadavilla 31, golfvilla 17); nothing pending/translating.
+- 37 were checker false positives. translation-check.ts (both repos, commits 623cca5/e8fbfd2 espadavilla,
+  d2ffe3f/61f98cf golfvilla) now normalizes both sides before comparing numbers: am/pm → 24h (incl. ranges,
+  "1 or 2pm"), drops "24/7", "24-hour", "24 Stunden", fr "24 h/24", "7 j/7"; expands year ranges ("2008 bis 2010");
+  fixes "Q1 2026" being read as 1202. English spelled-out numbers ("thirty days", "Eighty-three") are optional:
+  allowed as digits in the translation, never required. Golfvilla got the hyphenated-name fix too.
+- translate.ts prompt rule 3: keep approximations approximate ("mid-80s" never becomes 85); 24h clock is fine.
+- 3 real drifts ("mid-80s" → "85 °F", golfvilla) reset to pending and re-translated under the new rule.
+- 8 contact-info blocks: Rob chose to strip contact info from the English. Removed email/WhatsApp/restaurant phone
+  from cap-cana-birthday-villa-milestone-celebrations, cap-cana-direct-booking-villa-espadavilla,
+  punta-espada-restaurant-eden-roc-playing-from-villa-espada (edited_content, body_markdown, faq, summary);
+  diff-live-vs-db showed 0 drift first; re-rendered live with rerender-published.ts --force (commits 8147ff6,
+  7f0363c, 94f929d on espadavilla-com). Their 12 translations went stale and re-translate via cron.
+- After `--recheck` all false positives approved; cron publishing resumed on both sites (verified 16:46/16:48 UTC).
+- Leftover: untracked `translation-check.ts` at the espadavilla-blog-agent repo root (stray copy, not used).
