@@ -73,7 +73,10 @@ export function timesTo24h(text: string): string {
 
 /** "24/7", "24-hour", "24 Stunden", "24 h" → removed (often "around the clock"). */
 function dropAroundTheClock(text: string): string {
-  return text.replace(/\b24\s*(?:\/\s*7|-?\s*(?:hours?|hrs?|horas?|heures?|stunden|std\.?|h)\b)/gi, ' ');
+  return text
+    .replace(/\b24\s*h?\s*\/\s*24\b/gi, ' ')          // fr "24 h/24"
+    .replace(/\b7\s*(?:j|d|días|dias|tage)?\s*\/\s*7\b/gi, ' ') // "7 j/7", "7/7"
+    .replace(/\b24\s*(?:\/\s*7|-?\s*(?:hours?|hrs?|horas?|heures?|stunden|std\.?|h)\b)/gi, ' ');
 }
 
 const UNITS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9 };
@@ -136,10 +139,13 @@ export function checkTranslation(en: TranslationContent, tr: TranslationContent)
   // Numbers: every English number ≥13 (prices, capacity, years, %) must survive;
   // the translation must not introduce numbers ≥13 that English never had.
   // Small numbers are exempt because they are often written as words.
-  const enNums = new Set(extractNumbers(normalizeForNumbers(enText, true)).filter((n) => Number(n) >= 13));
+  // English numbers spelled out as words ("thirty days") are optional: the translation may
+  // spell them out too, or use digits.
+  const enNums = new Set(extractNumbers(normalizeForNumbers(enText, false)).filter((n) => Number(n) >= 13));
+  const enAllowed = new Set(extractNumbers(normalizeForNumbers(enText, true)).filter((n) => Number(n) >= 13));
   const trNums = new Set(extractNumbers(normalizeForNumbers(trText, false)).filter((n) => Number(n) >= 13));
   const missing = [...enNums].filter((n) => !trNums.has(n));
-  const added = [...trNums].filter((n) => !enNums.has(n));
+  const added = [...trNums].filter((n) => !enAllowed.has(n));
   if (missing.length) problems.push(`numbers missing: ${missing.slice(0, 10).join(', ')}`);
   if (added.length) problems.push(`numbers not in English: ${added.slice(0, 10).join(', ')}`);
 
