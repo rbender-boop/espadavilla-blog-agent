@@ -74,7 +74,7 @@ function buildSystem(languageName: string): string {
     'RULES:',
     '1. Translate everything: h1, meta_title (max 60 characters), meta_description (max 155 characters), summary, body, and every FAQ question and answer.',
     '2. Keep the markdown structure exactly: same headings in the same order, same lists, same tables, same number of FAQ items in the same order.',
-    '3. Copy every number exactly: prices, nightly rates, guest counts, bedrooms, minutes, minimum nights, percentages, years, rankings, yardages. Keep the US dollar sign ($) and US dollar amounts as they are; format thousands the way the target language does (e.g. $4.000 or $4 000) but never change the value. Do not convert units or currencies.',
+    '3. Copy every number exactly: prices, nightly rates, guest counts, bedrooms, minutes, minimum nights, percentages, years, rankings, yardages. Keep the US dollar sign ($) and US dollar amounts as they are; format thousands the way the target language does (e.g. $4.000 or $4 000) but never change the value. Do not convert units or currencies. Keep approximate figures approximate: "mid-80s" stays an approximate range (e.g. "alrededor de los 80 y tantos"), never a specific number like 85. Clock times may use the 24-hour format natural to the language.',
     `4. Keep these names exactly as written, never translated: ${PROTECTED_TERMS.join(', ')}.`,
     '5. Keep every link URL exactly as written. Translate only the visible link text.',
     '6. Add nothing and drop nothing. No new facts, claims, examples, or opinions. If a sentence is awkward, rephrase it, but keep its meaning.',

@@ -26,10 +26,12 @@ export type TranslationContent = {
 
 export type CheckResult = { ok: boolean; problems: string[] };
 
-/** Numbers as values: "$4,000", "4.000", "4 000", "15%" → "4000", "15". */
+/** Numbers as values: "$4,000", "4.000", "4 000", "15%" → "4000", "15".
+ *  A separator group must not run into more digits, so "Q1 2026" stays 1 and 2026
+ *  (it used to read as 1202). */
 export function extractNumbers(text: string): string[] {
   const out: string[] = [];
-  const re = /\d{1,3}(?:[.,\s\u00a0\u202f]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?/g;
+  const re = /\d{1,3}(?:[.,\s\u00a0\u202f]\d{3}(?!\d))+(?:[.,]\d+)?|\d+(?:[.,]\d+)?/g;
   for (const m of text.match(re) ?? []) {
     // drop thousands separators (separator followed by exactly 3 digits)
     let n = m.replace(/[.,\s\u00a0\u202f](?=\d{3}(?:\D|$))/g, '');
@@ -41,6 +43,67 @@ export function extractNumbers(text: string): string[] {
 
 function urls(text: string): string[] {
   return (text.match(/https?:\/\/[^\s)"'<>\]]+/g) ?? []).map((u) => u.replace(/[.,;:]+$/, ''));
+}
+
+// ---- Number normalization (applied to English and translation alike) ----
+// Translators legitimately rewrite some numbers: "2pm" → "14:00 Uhr", "24/7" →
+// "rund um die Uhr", "Eighty-three percent" → "83 %", "2008, 2009 and 2010" →
+// "2008 bis 2010". Normalize both sides so these compare equal.
+
+const AMPM = '(a\\.?\\s?m\\.?|p\\.?\\s?m\\.?)(?![a-z])';
+
+function to24(h: number, m: string | undefined, pm: boolean): string {
+  const H = (h % 12) + (pm ? 12 : 0);
+  return `${H}:${m ?? '00'}`;
+}
+
+/** "2pm" → "14:00", "1:50 p.m." → "13:50", "2–6 pm" → "14:00–18:00". */
+export function timesTo24h(text: string): string {
+  const range = new RegExp(`\\b(\\d{1,2})(?::(\\d{2}))?\\s*(?:-|\\u2013|\\u2014|\\/|to|and|or|until)\\s*(\\d{1,2})(?::(\\d{2}))?\\s*${AMPM}`, 'gi');
+  const single = new RegExp(`\\b(\\d{1,2})(?::(\\d{2}))?\\s*${AMPM}`, 'gi');
+  return text
+    .replace(range, (_s, h1, m1, h2, m2, ap) => {
+      const pm = /p/i.test(ap);
+      // "11 to 7 pm": the first time is morning
+      const firstPm = pm && Number(h1) % 12 <= Number(h2) % 12;
+      return `${to24(Number(h1), m1, firstPm)}\u2013${to24(Number(h2), m2, pm)}`;
+    })
+    .replace(single, (_s, h, m, ap) => to24(Number(h), m, /p/i.test(ap)));
+}
+
+/** "24/7", "24-hour", "24 Stunden", "24 h" → removed (often "around the clock"). */
+function dropAroundTheClock(text: string): string {
+  return text.replace(/\b24\s*(?:\/\s*7|-?\s*(?:hours?|hrs?|horas?|heures?|stunden|std\.?|h)\b)/gi, ' ');
+}
+
+const UNITS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9 };
+const TEENS: Record<string, number> = { thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19 };
+const TENS: Record<string, number> = { twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90 };
+
+/** English number words 13–99 → digits ("Eighty-three" → "83"). */
+export function englishWordsToDigits(text: string): string {
+  return text
+    .replace(/\b(twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)(?:[-\s](one|two|three|four|five|six|seven|eight|nine))?\b/gi,
+      (_s, t, u) => String((TENS[t.toLowerCase()] ?? 0) + (u ? (UNITS[u.toLowerCase()] ?? 0) : 0)))
+    .replace(/\b(thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen)\b/gi, (s) => String(TEENS[s.toLowerCase()] ?? s));
+}
+
+/** "2008 bis 2010" / "2008–2010" → adds the years in between (span ≤ 20). */
+function expandYearRanges(text: string): string {
+  const re = /\b((?:19|20)\d{2})\s*(?:-|\u2013|\u2014|to|through|bis|a|à|al|até|hasta|y|e|et|und|and)\s*((?:19|20)\d{2})\b/gi;
+  const extra: string[] = [];
+  for (const m of text.matchAll(re)) {
+    const a = Number(m[1] ?? 0), b = Number(m[2] ?? 0);
+    if (b - a > 1 && b - a <= 20) for (let y = a + 1; y < b; y++) extra.push(String(y));
+  }
+  return extra.length ? `${text}\n${extra.join(' ')}` : text;
+}
+
+export function normalizeForNumbers(text: string, isEnglish: boolean): string {
+  let t = timesTo24h(text);
+  t = dropAroundTheClock(t);
+  if (isEnglish) t = englishWordsToDigits(t);
+  return expandYearRanges(t);
 }
 
 function headings(md: string): number {
@@ -73,8 +136,8 @@ export function checkTranslation(en: TranslationContent, tr: TranslationContent)
   // Numbers: every English number ≥13 (prices, capacity, years, %) must survive;
   // the translation must not introduce numbers ≥13 that English never had.
   // Small numbers are exempt because they are often written as words.
-  const enNums = new Set(extractNumbers(enText).filter((n) => Number(n) >= 13));
-  const trNums = new Set(extractNumbers(trText).filter((n) => Number(n) >= 13));
+  const enNums = new Set(extractNumbers(normalizeForNumbers(enText, true)).filter((n) => Number(n) >= 13));
+  const trNums = new Set(extractNumbers(normalizeForNumbers(trText, false)).filter((n) => Number(n) >= 13));
   const missing = [...enNums].filter((n) => !trNums.has(n));
   const added = [...trNums].filter((n) => !enNums.has(n));
   if (missing.length) problems.push(`numbers missing: ${missing.slice(0, 10).join(', ')}`);
