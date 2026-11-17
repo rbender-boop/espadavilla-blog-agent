@@ -20,6 +20,7 @@
  *  #9  BlogPosting carries wordCount / articleSection / keywords / dateModified.
  */
 
+import { attributionHead } from './attribution-blocks';
 import { SITE_ORIGIN, postUrl } from '../links';
 import { gtmHead, gtmBodyNoscript, networkBar, siteNav, mobileMenu, siteFooter } from './site-chrome';
 import type { LangCode } from '../i18n/languages';
@@ -144,6 +145,7 @@ export function renderPostHtml(input: RenderInput): string {
 <html lang="${htmlLang}">
 <head>
 ${gtmHead()}
+${attributionHead()}
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title}</title>
