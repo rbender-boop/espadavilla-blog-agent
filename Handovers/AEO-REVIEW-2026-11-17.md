@@ -66,3 +66,70 @@ Las Iguanas status conflicts in my notes: `blog\cap-cana-golf-trip-itinerary.htm
 
 ## Summary
 Flat scan: 51% unbranded mention rate (52% on Nov 12). Biggest win: ChatGPT now describes Villa Espada correctly when asked directly, for the first time. Biggest loss: Perplexity citations of espadavilla.com fell for the third scan in a row (18 → 12 → 6 answers). The feeder site puntaespadavilla.com fell with it, so it isn't the cause. Eden Roc's lead in share of voice widened to 14.
+
+
+---
+
+## Perplexity investigation — 2026-11-17 (evening)
+
+### Ruled out (evidence)
+- Edge blocking: Vercel firewall "Not configured", Bot Protection Off, AI Bots Allow, Attack Mode Off (`vercel firewall status`).
+- Crawl access: PerplexityBot last 30 days (Vercel keeps 30): 398 requests — 381×200, 16×308, 1×404. It crawls the pages that lost citations (/ 28, /golf-courses/punta-espada 10, /golf 9, /golf-rates 14, /rates 11). Weekly rate steady (~90–100/week).
+- User-agent handling: PerplexityBot and Perplexity-User UAs get 200 + full page on /, /golf, /golf-courses/punta-espada, /availability. robots.txt allows PerplexityBot.
+
+### Observed
+- Perplexity-User (live fetch while answering): 0 requests in 30 days. ChatGPT-User 110, Claude-User 99 in the same window. No pre-Oct-19 data to compare.
+- Perplexity cites Villa Espada's own press releases (AP News, Business Insider, EIN Presswire, PRWeb, Murray Journal syndications) in place of espadavilla.com:
+
+| Scan | Answers citing espadavilla.com | citing a Villa Espada press release | either | of 48 |
+|---|---|---|---|---|
+| Oct 25 | 39 | 21 | 40 | 48 |
+| Oct 31 | 18 | 20 | 24 | 48 |
+| Nov 12 | 12 | 22 | 23 | 48 |
+| Nov 17 | 6 | 23 | 23 | 48 |
+
+- Reading: one real step down between Oct 25 and Oct 31 (40 → 24 answers citing any owned content). Since then the total is flat (23–24); espadavilla.com is being swapped out for the press-release syndications on the same answers.
+- Flagship prompt "villa right on Punta Espada": espadavilla.com 3→0; now cites apnews.com ×6, einpresswire, businessinsider, provaltur, Marriott H&V.
+
+### Unknown
+- Why Oct 25 → Oct 31 dropped. The Oct 29 site-wide sweep is in that window — timing only, no evidence it's the cause.
+- Why Perplexity prefers the syndicated releases over the site (likely domain authority, but that's not verifiable from our side).
+
+### Next steps (not done)
+1. Diff the espadavilla-com commits Oct 25–31 for the pages Perplexity cited most on Oct 25 (homepage, /compare/best-villas-cap-cana, summary PDF) — look for removed text/sections.
+2. Audit the syndicated press releases for wrong facts, since engines now quote them (Claude's "$200 per golfer" figure; canonical $135).
+3. Next probe: track "owned incl. press" citations as their own metric.
+
+### Step 1 result — Oct 25–31 commit diff (done 2026-11-17)
+Compared espadavilla-com at b8665993 (last commit before the Oct 25 scan) vs ba11510e (last before the Oct 31 scan) on the pages Perplexity cited most on Oct 25 (/ 22→10→4, /villa 9→9→4, summary PDF 9→1→0, /compare/best-villas-cap-cana 6→0, /compare/luxury-villa-cap-cana-with-staff 4→0, /compare/cap-cana-8-bedroom 5→3→1).
+- Only 26 lines changed across those files: member-guest wording ($200 savings → $135; "~$200 Golf Savings" stat → "$395 Flat Member-Guest Rate"), date stamps, sitemap lastmod, llms.txt lines. No sections removed.
+- best-villas-cap-cana and luxury-villa-with-staff: unchanged in the window (first touched by f4756515, after the Oct 31 scan).
+- Summary PDF: not changed in the window (changed 11-05 and 11-08, after).
+- 10-29 blog re-renders: JSON-LD reformatted; punta-espada-golf-villa-luxury-group word count 1,899 → 1,975 (nothing removed).
+- All these URLs return 200 today, no X-Robots-Tag; robots.txt unchanged.
+Verdict: no site change in the window explains the Oct 25 → Oct 31 drop. Cause is on Perplexity's side (selection/index) and not observable from here.
+
+
+---
+
+## Live-site check — 2026-11-17 (late)
+Checked live (cache-busted) before changing anything. Already live, no action needed:
+- golfvilla 22/20-guest pricing ($5,100 ≈ $232 pp; $4,900 ≈ $245 pp) on all 9 slugs + vs-resort-blocks + packages.
+- espadavilla sargassum (no June 2026 status), playbook (no "same rate for 6 or 8 bedrooms").
+- Clubhouse "3 minutes" lines: cap-cana-events and /experiences now say about 5 minutes.
+- Eden Roc compare page names Villa Espada in the per-person lines ($281 for 16, $232 for 22).
+- 12 golfers / three foursomes section live on punta-espada-golf-villa-luxury-group.
+- Las Iguanas: every checked page says back nine open, front nine ~spring 2027.
+
+Fixed this session (one real error):
+- golfvilla `punta-cana-golf-villas`: "The first nine holes are currently open for members only, but Villa Espada guests play at member-guest discounted rates" → "Villa Espada guests can book Las Iguanas at the course's regular rates; the member-guest discount applies at Punta Espada only." Updated in DB body_markdown (edited_content is empty for this post) and in local golfvilla-com blog\punta-cana-golf-villas\index.html. Pushed by Rob (golfvilla-com commit 98b75f9); verified live 2026-11-17: old text gone, new text present.
+
+## Status after this session
+All items from the 11-16 and 11-17 recommendation lists are done and live, except:
+- Press-release "$200 per golfer" figure (canonical $135). Off-site; needs a new or corrected release.
+- Perplexity citation drop: investigated, cause is on Perplexity's side, no action available. Watch on the next scan; consider tracking "owned incl. press releases" as its own metric in the probe.
+- puntaespadavilla.com 12 city pages: doorway-content risk, decision deferred until GSC data for that domain is available.
+Next AEO scan: compare Eden Roc alternatives (0/8), group of 12 golfers (1/12) and Perplexity citations against this scan, since the related page changes are now live.
+
+Course-to-course "three-minute" lines left alone per the 11-07 decision.
+Live-check scripts and output (reusable): Handovers\livecheck-2026-11-17.ps1, Handovers\livecheck2-2026-11-17.ps1 (+ .txt results).
